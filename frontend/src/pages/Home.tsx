@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { LeftSidebar } from "../components/LeftSidebar";
 import backgroundImage from "../assets/Background.jpg";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@clerk/react";
 
 const accentClasses: Record<string, { badge: string; text: string; ring: string }> = {
   sky: { badge: "bg-sky-500/10 text-sky-400 ring-sky-500/20", text: "text-sky-400", ring: "hover:border-sky-500/50" },
@@ -18,7 +20,13 @@ const accentClasses: Record<string, { badge: string; text: string; ring: string 
 
 export function Home() {
   const [isLoading, setIsLoading] = useState(true);
-
+  const navigate = useNavigate()
+  const {userId} = useAuth()
+  useEffect(() => {
+    if(!userId){
+        navigate("/intermission")
+    }
+  }, [userId])
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 500);
     return () => clearTimeout(timer);

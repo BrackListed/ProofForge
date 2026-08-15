@@ -1,2 +1,2 @@
-# ProofForge-Scrutinize-Text.-Simulate-Debates.-Calculate-Risk.
+# ProofForge: Scrutinize-Text, Simulate-Debates, Calculate-Risk.
 ProofForge is an adversarial reasoning toolkit built to stress-test your thinking under pressure. Deconstruct weak logic, face real-time debate interruptions, and model worst-case decision risks before the real world catches your flaws. Forge airtight arguments and make critical choices with complete clarity. Built for the impact forge hackathon

@@ -101,7 +101,7 @@ export function LeftSidebar() {
         </div>
         <div className="min-w-0">
           <p className="truncate text-xs text-zinc-500">Welcome,</p>
-          <p className="truncate text-sm font-semibold text-zinc-100">jessicap</p>
+          <p className="truncate text-sm font-semibold text-zinc-100">Jayce</p>
         </div>
       </div>
 
