@@ -21,12 +21,12 @@ const accentClasses: Record<string, { badge: string; text: string; ring: string 
 export function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate()
-  const {userId} = useAuth()
+  const {isLoaded, userId} = useAuth()
   useEffect(() => {
-    if(!userId){
+    if(isLoaded && !userId){
         navigate("/intermission")
     }
-  }, [userId])
+  }, [isLoaded, userId, navigate])
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 500);
     return () => clearTimeout(timer);
