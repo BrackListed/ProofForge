@@ -167,3 +167,105 @@ body {
   background: rgba(113, 113, 122, 0.2) !important;
   color: #d4d4d8 !important;
 }
+
+/* Clerk <UserProfile> modal theming (opened via openUserProfile in the sidebar) */
+.cl-modalBackdrop {
+  background: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: blur(4px);
+}
+
+.cl-modalContent {
+  background: transparent !important;
+}
+
+.cl-modalContent .cl-cardBox,
+.cl-modalContent .cl-card {
+  background: rgba(24, 24, 27, 0.9) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(113, 113, 122, 0.2) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
+}
+
+.cl-modalContent .cl-navbar {
+  background: rgba(9, 9, 11, 0.6) !important;
+  border-right: 1px solid rgba(113, 113, 122, 0.15) !important;
+}
+
+.cl-modalContent .cl-navbarButton {
+  color: #a1a1aa !important;
+}
+
+.cl-modalContent .cl-navbarButton:hover {
+  background: rgba(63, 63, 70, 0.3) !important;
+  color: #f4f4f5 !important;
+}
+
+.cl-modalContent .cl-navbarButton[data-active="true"] {
+  background: rgba(56, 189, 248, 0.12) !important;
+  color: #38bdf8 !important;
+}
+
+.cl-modalContent .cl-headerTitle,
+.cl-modalContent .cl-profileSectionTitleText,
+.cl-modalContent .cl-userPreviewMainIdentifier {
+  color: #fafafa !important;
+}
+
+.cl-modalContent .cl-headerSubtitle,
+.cl-modalContent .cl-profileSectionContent,
+.cl-modalContent .cl-userPreviewSecondaryIdentifier {
+  color: #a1a1aa !important;
+}
+
+.cl-modalContent .cl-formFieldLabel {
+  color: #d4d4d8 !important;
+}
+
+.cl-modalContent .cl-formFieldInput {
+  background: rgba(9, 9, 11, 0.6) !important;
+  border: 1px solid rgba(113, 113, 122, 0.25) !important;
+  color: #f4f4f5 !important;
+  border-radius: 0.5rem !important;
+}
+
+.cl-modalContent .cl-formButtonPrimary {
+  background: linear-gradient(135deg, #6366f1, #0ea5e9) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+  border-radius: 0.5rem !important;
+  font-weight: 600;
+}
+
+.cl-modalContent .cl-formButtonReset {
+  color: #a1a1aa !important;
+}
+
+.cl-modalContent .cl-profileSectionPrimaryButton,
+.cl-modalContent .cl-menuButton {
+  color: #38bdf8 !important;
+}
+
+.cl-modalContent .cl-badge {
+  background: rgba(113, 113, 122, 0.2) !important;
+  color: #d4d4d8 !important;
+}
+
+.cl-modalContent .cl-menuList {
+  background: rgba(24, 24, 27, 0.95) !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(113, 113, 122, 0.2) !important;
+}
+
+.cl-modalContent .cl-menuItem {
+  color: #e4e4e7 !important;
+}
+
+.cl-modalContent .cl-menuItem:hover {
+  background: rgba(63, 63, 70, 0.4) !important;
+}
+
+.cl-modalCloseButton {
+  color: #a1a1aa !important;
+}

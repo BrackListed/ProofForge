@@ -129,6 +129,7 @@ export function Home() {
           <h2 className="mb-3 text-sm font-medium text-zinc-400">Tools</h2>
           <div className="grid grid-cols-3 gap-4">
             <div
+                onClick={() => navigate("/scrutinize")}
               className={`group rounded-xl border border-zinc-500/20 bg-zinc-800/30 backdrop-blur-md px-5 py-4 transition-all hover:-translate-y-0.5 hover:bg-zinc-800/45 ${accentClasses.sky.ring}`}
             >
               <div className={`mb-3 flex h-9 w-9 items-center justify-center rounded-lg ring-1 ring-inset ${accentClasses.sky.badge}`}>
