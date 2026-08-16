@@ -143,8 +143,6 @@ export function Debate() {
         const aiTranscript = log.transcript.filter((item: transcriptType) => item.sender === "ai")
         setUserTranscript(userTranscript)
         setAiTranscript(aiTranscript)
-        console.log(aiTranscript)
-        console.log(userTranscript)
     }
     if(roomId) fetchDebateLogs()
   }, [roomId])
@@ -391,9 +389,8 @@ export function Debate() {
             <p className="mb-3 text-xs tracking-widest text-zinc-500">[ROOMS] ({rooms.length} active)</p>
             <div className="grid grid-cols-3 gap-4">
               {rooms.map((room) => (
-                <button
+                <div
                   key={room.id}
-                  type="button"
                   onClick={() => {
                     setArgument("");
                     setIsSpeaking(false);
@@ -403,14 +400,24 @@ export function Debate() {
                     setTimeLimit(180);
                     setRoomId(room.id);
                   }}
-                  className="group border border-zinc-700 bg-zinc-950/70 p-4 text-left backdrop-blur-sm transition-colors hover:border-red-500/50 hover:bg-zinc-900"
+                  className="group relative cursor-pointer border border-zinc-700 bg-zinc-950/70 p-4 text-left backdrop-blur-sm transition-colors hover:border-red-500/50 hover:bg-zinc-900"
                 >
-                  <p className="mb-2 text-xs tracking-widest text-red-400">[{room.title.toUpperCase()}]</p>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteRoom(room.id, userId);
+                    }}
+                    className="absolute top-2 right-2 border border-zinc-700 px-1.5 py-0.5 text-[10px] tracking-wide text-zinc-500 opacity-0 transition-colors group-hover:opacity-100 hover:border-red-500/50 hover:text-red-400"
+                  >
+                    ✕
+                  </button>
+                  <p className="mb-2 pr-6 text-xs tracking-widest text-red-400">[{room.title.toUpperCase()}]</p>
                   <p className="text-xs leading-relaxed text-zinc-500">Topic: {room.topic}</p>
                   <span className="mt-2 inline-block text-xs text-red-400 opacity-0 transition-opacity group-hover:opacity-100">
                     Enter &rarr;
                   </span>
-                </button>
+                </div>
               ))}
               {rooms.length === 0 && (
                 <p className="text-xs text-zinc-600">No rooms yet. Create one to get started.</p>
@@ -476,12 +483,19 @@ export function Debate() {
   );
 
   async function createRoom(title: string, topic: string, userId: string | undefined | null){
-    if(!userId) return 
+    if(!userId) return
     const token = await getToken()
     const result = await axios.post(`http://localhost:5000/create-room/${userId}`, {title: title, topic: topic}, {headers: {Authorization: `Bearer ${token}`}})
     const newRoom: roomType = { id: result.data, user_id: userId ?? "", title, topic }
     setRooms((prev) => [...prev, newRoom])
     setRoomId(newRoom.id)
+  }
+
+  async function deleteRoom(roomId: string, userId: string | undefined | null){
+    if(!userId) return
+    const token = await getToken()
+    await axios.delete(`http://localhost:5000/rooms/${userId}/${roomId}`, {headers: {Authorization: `Bearer ${token}`}})
+    setRooms((prev) => prev.filter((r) => r.id !== roomId))
   }
 
   async function processArgument(argument: string, userId: string | undefined | null, roomId: string){

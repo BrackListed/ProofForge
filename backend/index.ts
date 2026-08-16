@@ -83,6 +83,14 @@ app.get("/rooms/:userId", async(req, res) => {
   res.json(result.rows)
 })
 
+app.delete("/rooms/:userId/:roomId", async(req, res) => {
+  const {userId, roomId} = req.params
+  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
+  const result = await pool.query("DELETE FROM debate_room WHERE id = $1 AND user_id = $2 RETURNING id", [roomId, id.rows[0].id])
+  if(result.rows.length === 0) return res.status(404).json({error: "Room not found"})
+  res.json({id: result.rows[0].id})
+})
+
 app.get("/debate/logs/:roomId/:userId", async(req, res) => {
   const {userId, roomId} = req.params
   const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
