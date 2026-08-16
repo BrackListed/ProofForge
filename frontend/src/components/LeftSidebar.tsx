@@ -31,7 +31,7 @@ export function LeftSidebar() {
   const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-zinc-700 bg-black/40 font-mono backdrop-blur-xl">
+    <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r border-zinc-700 bg-black/40 font-mono backdrop-blur-xl">
       <div className="flex items-center gap-2 px-5 pt-5 pb-4">
         <div className="flex h-7 w-7 items-center justify-center border border-indigo-400/30 bg-linear-to-br from-indigo-500 to-sky-600 shadow-lg shadow-indigo-950/50">
           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-white">
