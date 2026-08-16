@@ -220,7 +220,7 @@ export function Scrutinizer() {
           </div>
 
           <div className="flex flex-col gap-6">
-            <div className="border border-zinc-700 bg-zinc-950/70 p-4 backdrop-blur-sm">
+            <div data-tour="scrutinize-premise" className="border border-zinc-700 bg-zinc-950/70 p-4 backdrop-blur-sm">
               <p className="mb-3 text-xs tracking-widest text-zinc-500">[ ] PREMISE AUDIT</p>
               <p className="text-sm leading-relaxed text-zinc-300">
                 The foundational assertion: "
@@ -229,7 +229,7 @@ export function Scrutinizer() {
               <p className="mt-2 text-xs text-zinc-500">[Status: Isolated]</p>
             </div>
 
-            <div className="border border-zinc-700 bg-zinc-950/70 p-4 backdrop-blur-sm">
+            <div data-tour="scrutinize-logic" className="border border-zinc-700 bg-zinc-950/70 p-4 backdrop-blur-sm">
               <p className="mb-3 text-xs tracking-widest text-zinc-500">[X] LOGIC MAP</p>
               {selectedLog ? (
                 <div className="space-y-1 text-sm">
@@ -266,7 +266,7 @@ export function Scrutinizer() {
           </div>
         </div>
 
-        <div className="mt-6 border border-zinc-700 bg-zinc-950/70 p-4 backdrop-blur-sm">
+        <div data-tour="scrutinize-flags" className="mt-6 border border-zinc-700 bg-zinc-950/70 p-4 backdrop-blur-sm">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-y-2">
             <p className="text-xs tracking-widest text-zinc-500">
               [!] CRITICAL FLAGS ({selectedLog ? selectedLog.flag_count : 4} Identified)

@@ -304,7 +304,7 @@ export function Debate() {
                 </div>
               </div>
 
-              <div className="border border-zinc-700 bg-zinc-950/70 p-4 backdrop-blur-sm">
+              <div data-tour="debate-response" className="border border-zinc-700 bg-zinc-950/70 p-4 backdrop-blur-sm">
                 <div className="mb-3 flex items-center gap-2">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

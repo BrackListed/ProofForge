@@ -208,7 +208,7 @@ export function Risk() {
 
         {stage === "dashboard" && selectedRisk && selectedRisk.status === "COMPLETED" && (
           <>
-            <section className="grid grid-cols-3 gap-4">
+            <section data-tour="risk-threat" className="grid grid-cols-3 gap-4">
               <div className="border border-rose-800/40 bg-slate-950/80 p-4 backdrop-blur-sm">
                 <p className="mb-2 text-xs tracking-widest text-zinc-500">[THREAT LEVEL]</p>
                 <p className={`text-3xl font-bold ${threatColor[selectedRisk.threat_level] ?? "text-rose-400"}`}>
@@ -233,7 +233,7 @@ export function Risk() {
             </section>
 
             <div className="mt-6 grid grid-cols-5 gap-6">
-              <div className="col-span-3 border border-slate-700/50 bg-slate-950/80 p-5 backdrop-blur-sm">
+              <div data-tour="risk-timeline" className="col-span-3 border border-slate-700/50 bg-slate-950/80 p-5 backdrop-blur-sm">
                 <p className="mb-5 text-xs tracking-widest text-zinc-500">[CASCADING FAILURE TIMELINE]</p>
                 <div className="relative space-y-8 border-l-2 border-rose-500/30 pl-6">
                   {selectedRisk.timeline.map((t, i) => {
@@ -258,7 +258,7 @@ export function Risk() {
                 </div>
               </div>
 
-              <div className="col-span-2 flex flex-col gap-6">
+              <div data-tour="risk-consequences" className="col-span-2 flex flex-col gap-6">
                 <div className="grid grid-cols-2 gap-4">
                   {selectedRisk.blast_radius.map((b, i) => (
                     <div key={i} className="border border-slate-700/50 bg-slate-950/80 p-3 backdrop-blur-sm">
