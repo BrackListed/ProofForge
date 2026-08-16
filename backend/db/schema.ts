@@ -56,6 +56,25 @@ export const debate_logs = pgTable("debate_logs", {
     unique("user_room_unique").on(table.user_id, table.room_id)
 ])
 
+export const risks = pgTable("risks", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    user_id: uuid("user_id").references(() => users.id, {onDelete: "cascade"}),
+    status: text("status", {enum: ['PROBING', 'COMPLETED', 'FAILED']}),
+    initial_decision: text("initial_decision"),
+    category: text("category"),
+    probing_questions: jsonb("probing_questions"),
+    user_answers: jsonb("user_answers"),
+    risk_score: integer("risk_score"),
+    threat_level: text("threat_level", {enum: ['LOW', 'MODERATE', 'CRITICAL']}),
+    reversibility_level: text("reversibility_level", {enum: ['HIGH', 'MEDIUM', 'IRREVERSIBLE']}),
+    primary_obstacle: text("primary_obstacle"),
+    timeline: jsonb("timeline"),
+    blast_radius: jsonb("blast_radius"),
+    exit: jsonb("exit"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+})
+
 export const debateRoomRelations = relations(debate_room, ({ many }) => ({
     logs: many(debate_logs)
 }))
@@ -68,12 +87,20 @@ export const debateLogsRelations = relations(debate_logs, ({ one }) => ({
 }))
 
 export const usersRelations = relations(users, ({ many }) => ({
-    scrutinizeLogs: many(scrutinize)
+    scrutinizeLogs: many(scrutinize),
+    riskLogs: many(risks)
 }))
 
 export const scrutinizeRelations = relations(scrutinize, ({ one }) => ({
     user: one(users, {
         fields: [scrutinize.user_id],
+        references: [users.id]
+    })
+}))
+
+export const risksRelations = relations(risks, ({ one }) => ({
+    user: one(users, {
+        fields: [risks.user_id],
         references: [users.id]
     })
 }))

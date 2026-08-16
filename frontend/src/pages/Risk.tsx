@@ -1,21 +1,89 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LeftSidebar } from "../components/LeftSidebar";
 import backgroundImage from "../assets/Risk_Background.jpg";
+import { useAuth } from "@clerk/react";
+import axios from "axios";
 
+
+interface probingType{
+    id: string
+    question: string
+    placeholder: string
+}
+
+interface answerType{
+    id: string
+    answer: string
+}
+
+interface timelineType{
+    step: number
+    title: string
+    description: string
+    target_date: string
+}
+
+interface blast_radius{
+    affected_area: string
+    impact_level: "LOW" | "MEDIUM" | "HIGH"
+    description: string
+}
+
+interface exitType{
+    trigger: string
+    action: string
+    fallback_plan: string
+}
+
+interface riskType{
+    id: string
+    user_id: string
+    status: "PROBING" | "COMPLETED" | "FAILED"
+    initial_decision: string
+    category: string
+    probing_questions: probingType[]
+    user_answers: answerType[]
+    risk_score: number
+    threat_level: "LOW" | "MODERATE" | "CRITICAL"
+    reversibility_level: "HIGH" | "MEDIUM" | "IRREVERSIBLE"
+    primary_obstacle: string
+    timeline: timelineType[]
+    blast_radius: blast_radius[]
+    exit: exitType
+    createdAt: Date
+    updatedAt: Date
+}
 export function Risk() {
   const [stage, setStage] = useState<"terminal" | "probe" | "dashboard">("terminal");
   const [decision, setDecision] = useState("");
-  const [constraint1, setConstraint1] = useState("");
-  const [constraint2, setConstraint2] = useState("");
-  const [constraint3, setConstraint3] = useState("");
-
+  const {userId, getToken} = useAuth()
+  const [risks, setRisks] = useState<riskType[]>([])
+  const [selectedRisk, setSelectedRisk] = useState<riskType | undefined>(undefined)
+  const [answers, setAnswers] = useState<Record<string, string>>({})
   const reset = () => {
     setDecision("");
-    setConstraint1("");
-    setConstraint2("");
-    setConstraint3("");
+    setAnswers({});
+    setSelectedRisk(undefined);
     setStage("terminal");
   };
+
+  const selectRisk = (risk: riskType) => {
+    setSelectedRisk(risk);
+    setAnswers({});
+    setStage(risk.status === "COMPLETED" ? "dashboard" : "probe");
+  };
+
+  const fetchRisks = async (userId: string | null | undefined) => {
+    if (!userId) return;
+    const token = await getToken()
+    const result = await axios.get(`http://localhost:5000/risks/${userId}`, {headers: {Authorization: `Bearer ${token}`}})
+    setRisks(Array.isArray(result.data) ? result.data : [])
+  }
+
+  useEffect(() => {
+    const timeout = setTimeout(() => fetchRisks(userId), 0);
+    return () => clearTimeout(timeout);
+  }, [userId])
 
   return (
     <div className="relative flex min-h-screen font-mono text-zinc-300">
@@ -55,6 +123,25 @@ export function Risk() {
           )}
         </header>
 
+        <div className="mb-6 flex flex-wrap items-center gap-2">
+          <p className="mr-1 text-xs tracking-widest text-zinc-500">[RISKS]</p>
+          {risks.length === 0 && <p className="text-xs text-zinc-600">No risks yet.</p>}
+          {risks.map((risk) => (
+            <button
+              key={risk.id}
+              type="button"
+              onClick={() => selectRisk(risk)}
+              className={`border px-3 py-1.5 text-xs tracking-wide transition-colors ${
+                selectedRisk?.id === risk.id
+                  ? "border-rose-500/60 bg-rose-500/10 text-rose-400"
+                  : "border-slate-700/50 text-zinc-400 hover:border-rose-500/40 hover:text-rose-400"
+              }`}
+            >
+              {risk.category.replace(/_/g, " ").toUpperCase()}
+            </button>
+          ))}
+        </div>
+
         {stage !== "dashboard" && (
           <div className="border border-slate-700/50 bg-slate-900/80 p-4 backdrop-blur-sm">
             <p className="mb-3 text-xs tracking-widest text-zinc-500">[DECISION TERMINAL]</p>
@@ -68,7 +155,7 @@ export function Risk() {
             <button
               type="button"
               disabled={!decision.trim()}
-              onClick={() => setStage("probe")}
+              onClick={() => {setStage("probe"); processDecision(decision, userId)}}
               className="mt-4 w-full border border-rose-500/40 bg-rose-500/10 py-2.5 text-sm tracking-widest text-rose-400 transition-colors hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40"
             >
               [INITIALIZE DIAGNOSIS &gt;]
@@ -184,38 +271,39 @@ export function Risk() {
 
       {stage === "probe" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-md border border-rose-500/40 bg-slate-950/90 p-5 font-mono shadow-[0_0_40px_rgba(244,63,94,0.15)] backdrop-blur-sm">
-            <p className="mb-1 text-xs tracking-widest text-amber-400">[DIAGNOSTIC CROSS-EXAMINATION]</p>
-            <p className="mb-4 text-xs text-zinc-500">Answer these to sharpen the simulation, or skip to an estimate.</p>
+          <div className="flex max-h-[85vh] w-full max-w-md flex-col border border-rose-500/40 bg-slate-950/90 font-mono shadow-[0_0_40px_rgba(244,63,94,0.15)] backdrop-blur-sm">
+            <div className="p-5 pb-1">
+              <p className="mb-1 text-xs tracking-widest text-amber-400">[DIAGNOSTIC CROSS-EXAMINATION]</p>
+              <p className="text-xs text-zinc-500">
+                Category: <span className="text-rose-400">{selectedRisk?.category ?? "—"}</span>
+                {"  ·  "}
+                Status: <span className="text-rose-400">{selectedRisk?.status ?? "—"}</span>
+              </p>
+            </div>
 
-            <label className="mb-1 block text-xs text-zinc-500">Liquid runway / financial buffer</label>
-            <input
-              type="text"
-              value={constraint1}
-              onChange={(e) => setConstraint1(e.target.value)}
-              placeholder="e.g. 6 months of expenses saved"
-              className="mb-4 w-full border border-slate-700/50 bg-black/40 p-2 text-sm text-zinc-300 outline-none focus:border-rose-500/50"
-            />
+            <div className="flex-1 overflow-y-auto p-5 py-4">
+              {!selectedRisk ? (
+                <div className="flex items-center gap-2 py-8 text-xs text-zinc-500">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-rose-400" />
+                  Analyzing your decision...
+                </div>
+              ) : (
+                selectedRisk.probing_questions.map((q) => (
+                  <div key={q.id} className="mb-4 last:mb-0">
+                    <label className="mb-1 block text-xs text-zinc-500">{q.question}</label>
+                    <input
+                      type="text"
+                      value={answers[q.id] ?? ""}
+                      onChange={(e) => setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
+                      placeholder={q.placeholder}
+                      className="w-full border border-slate-700/50 bg-black/40 p-2 text-sm text-zinc-300 outline-none focus:border-rose-500/50"
+                    />
+                  </div>
+                ))
+              )}
+            </div>
 
-            <label className="mb-1 block text-xs text-zinc-500">Key commitments / dependents</label>
-            <input
-              type="text"
-              value={constraint2}
-              onChange={(e) => setConstraint2(e.target.value)}
-              placeholder="e.g. 1 dependent, rent due monthly"
-              className="mb-4 w-full border border-slate-700/50 bg-black/40 p-2 text-sm text-zinc-300 outline-none focus:border-rose-500/50"
-            />
-
-            <label className="mb-1 block text-xs text-zinc-500">Hard exit date / non-negotiables</label>
-            <input
-              type="text"
-              value={constraint3}
-              onChange={(e) => setConstraint3(e.target.value)}
-              placeholder="e.g. Must be stable again within 1 year"
-              className="mb-5 w-full border border-slate-700/50 bg-black/40 p-2 text-sm text-zinc-300 outline-none focus:border-rose-500/50"
-            />
-
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-3 border-t border-slate-800 p-5 pt-4">
               <button
                 type="button"
                 onClick={() => setStage("dashboard")}
@@ -236,4 +324,15 @@ export function Risk() {
       )}
     </div>
   );
+
+  async function processDecision(decision: string, userId: string | null | undefined){
+    if(!userId) return
+    setSelectedRisk(undefined)
+    setAnswers({})
+    const token = await getToken()
+    const result = await axios.post(`http://localhost:5000/analyze-risk/${userId}`, {decision: decision}, {headers: {Authorization: `Bearer ${token}`}})
+    await fetchRisks(userId)
+    setSelectedRisk(result.data)
+    console.log(result.data)
+  }
 }

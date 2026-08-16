@@ -98,6 +98,13 @@ app.get("/debate/logs/:roomId/:userId", async(req, res) => {
   res.json(result.rows)
 })
 
+app.get("/risks/:userId", async(req, res) => {
+  const {userId} = req.params
+  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
+  const result = await pool.query("SELECT * FROM risks WHERE user_id = $1", [id.rows[0].id])
+  res.json(result.rows)
+})
+
 app.post("/scrutinize/:userId", async(req, res) => {
   const {userId} = req.params
   const {text, file} = req.body
@@ -204,6 +211,36 @@ app.post("/process-argument/:userId/:roomId", async(req, res) => {
   })
   await pool.query(`INSERT INTO debate_logs(user_id, room_id, transcript, updated_at) VALUES($1, $2, $3, NOW()) ON CONFLICT(user_id, room_id) DO UPDATE SET transcript = $3, updated_at = NOW()`, [id.rows[0].id, roomId, JSON.stringify(transcript)])
   return res.json(parsedReply)
+})
+
+app.post("/analyze-risk/:userId", async(req, res) => {
+  const {userId} = req.params
+  const {decision} = req.body
+  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
+  console.log(decision)
+  const completions = await client.chat.completions.create({
+    model: `mistralai/Mistral-Small-24B-Instruct-2501`,
+    response_format: {type: "json_object"},
+    messages: [{
+      role: "system",
+      content: `You are an aggressive risk diagnostic tool. Analyze missing constraints and return ONLY a JSON object with:
+        1. "category": A concise category label for this decision.
+        2. "probing_questions": An array of a maximum(but not required) of 10 objects, each object must contain:
+        "id": A short, lowercase, snake_case string representing the topic (e.g. "time_commitment", "sacrificed_stack", "target_goal").
+        "question": The question string.
+        "placeholder": An example string.
+      `
+    },
+    {
+      role: "user",
+      content: decision
+    }
+    ]
+  })
+  const response = completions.choices[0]?.message?.content ?? "{}"
+  const parsedResponse = JSON.parse(response)
+  const result = await pool.query("INSERT INTO risks(user_id, status, initial_decision, category, probing_questions) VALUES($1, $2, $3, $4, $5) RETURNING id", [id.rows[0].id, "PROBING", decision, parsedResponse.category, JSON.stringify(parsedResponse.probing_questions)])
+  res.json(result.rows[0].id)
 })
 
 const PORT = process.env.PORT || 5000
