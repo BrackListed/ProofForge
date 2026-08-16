@@ -3,6 +3,8 @@ import { LeftSidebar } from "../components/LeftSidebar";
 import backgroundImage from "../assets/Debate_Background.jpg";
 import { useAuth } from "@clerk/react";
 import axios from "axios";
+import { useTourPrefill } from "../tour/useTourPrefill";
+import { DEMO_ARGUMENT, DEMO_ROOM_TITLE, DEMO_ROOM_TOPIC } from "../tour/steps";
 
 interface SpeechRecognitionResultLike {
   isFinal: boolean;
@@ -72,6 +74,16 @@ export function Debate() {
   const [isAiTyping, setIsAiTyping] = useState(false)
   const revealIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const activeRoom = rooms.find((r) => r.id === roomId) ?? null;
+
+  useTourPrefill("debate-create", !isCreateOpen, () => {
+    setRoomName(DEMO_ROOM_TITLE);
+    setTopic(DEMO_ROOM_TOPIC);
+    setIsCreateOpen(true);
+  });
+
+  useTourPrefill("debate-argument", Boolean(roomId) && !argument, () => {
+    setArgument(DEMO_ARGUMENT);
+  });
 
   useEffect(() => {
     if (!hasStarted || isDone) return;
@@ -233,6 +245,7 @@ export function Debate() {
               <p className="mt-1 text-xs text-zinc-500">Topic: {activeRoom?.topic}</p>
             </header>
 
+            <div data-tour="debate-argument-input">
             <div className="grid grid-cols-2 gap-6">
               <div className="border border-zinc-700 bg-zinc-950/70 p-4 backdrop-blur-sm">
                 <div className="mb-3 flex items-center justify-between">
@@ -330,6 +343,7 @@ export function Debate() {
               >
                 {isDone ? "✓ Done" : "> Done <"}
               </button>
+            </div>
             </div>
 
             {(userTranscript.length > 0 || aiTranscript.length > 0) && (
@@ -429,7 +443,7 @@ export function Debate() {
 
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-sm border border-zinc-700 bg-zinc-950/95 p-5 font-mono backdrop-blur-sm">
+          <div data-tour="debate-create-room" className="w-full max-w-sm border border-zinc-700 bg-zinc-950/95 p-5 font-mono backdrop-blur-sm">
             <p className="mb-4 text-xs tracking-widest text-zinc-500">[CREATE ROOM]</p>
 
             <label className="mb-1 block text-xs text-zinc-500">Room Name</label>

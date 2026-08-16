@@ -105,6 +105,55 @@ app.get("/risks/:userId", async(req, res) => {
   res.json(result.rows)
 })
 
+app.get("/activity/:userId", async(req, res) => {
+  const {userId} = req.params
+  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
+  const result = await pool.query(`
+    SELECT 'Text Scrutinizer' AS tool, LEFT(content, 140) AS summary,
+      CASE WHEN flag_count = 0 THEN 'No issues flagged' ELSE flag_count || ' issue' || CASE WHEN flag_count = 1 THEN '' ELSE 's' END || ' flagged' END AS verdict,
+      CASE WHEN flag_count = 0 THEN 'clean' WHEN flag_count <= 2 THEN 'warn' ELSE 'bad' END AS tone,
+      created_at::timestamptz AS date
+    FROM scrutinize WHERE user_id = $1
+
+    UNION ALL
+
+    SELECT 'Debate Simulator' AS tool, dr.title AS summary,
+      COALESCE(jsonb_array_length(dl.transcript), 0) || ' exchanges' AS verdict,
+      'neutral' AS tone,
+      dl.updated_at::timestamptz AS date
+    FROM debate_logs dl
+    JOIN debate_room dr ON dr.id = dl.room_id
+    WHERE dl.user_id = $1
+
+    UNION ALL
+
+    SELECT 'Risk Simulator' AS tool, COALESCE(initial_decision, 'Untitled decision') AS summary,
+      CASE WHEN status = 'COMPLETED' THEN threat_level || ' risk' WHEN status = 'FAILED' THEN 'Failed' ELSE 'Probing' END AS verdict,
+      CASE WHEN threat_level = 'CRITICAL' THEN 'bad' WHEN threat_level = 'MODERATE' THEN 'warn' WHEN threat_level = 'LOW' THEN 'clean' ELSE 'neutral' END AS tone,
+      updated_at::timestamptz AS date
+    FROM risks WHERE user_id = $1
+
+    ORDER BY date DESC
+    LIMIT 8
+  `, [id.rows[0].id])
+  res.json(result.rows)
+})
+
+app.get("/stats/:userId", async(req, res) => {
+  const {userId} = req.params
+  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
+  const [scrutinized, debates, risks] = await Promise.all([
+    pool.query("SELECT COUNT(*) FROM scrutinize WHERE user_id = $1", [id.rows[0].id]),
+    pool.query("SELECT COUNT(*) FROM debate_room WHERE user_id = $1", [id.rows[0].id]),
+    pool.query("SELECT COUNT(*) FROM risks WHERE user_id = $1", [id.rows[0].id]),
+  ])
+  res.json({
+    scrutinized: Number(scrutinized.rows[0].count),
+    debates: Number(debates.rows[0].count),
+    risks: Number(risks.rows[0].count),
+  })
+})
+
 app.post("/scrutinize/:userId", async(req, res) => {
   const {userId} = req.params
   const {text, file} = req.body

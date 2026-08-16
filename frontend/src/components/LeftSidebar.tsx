@@ -1,5 +1,8 @@
 import { NavLink } from "react-router-dom";
 import { useClerk, useUser } from "@clerk/react";
+import { motion } from "framer-motion";
+import { useTour } from "../tour/useTour";
+import { fullTourSteps } from "../tour/steps";
 
 const accentClasses: Record<string, { active: string; bar: string; icon: string }> = {
   indigo: {
@@ -27,12 +30,22 @@ const accentClasses: Record<string, { active: string; bar: string; icon: string 
 export function LeftSidebar() {
   const { user } = useUser();
   const { openUserProfile } = useClerk();
+  const { start } = useTour();
   const displayName = user?.username ?? user?.firstName ?? "there";
   const initials = displayName.slice(0, 2).toUpperCase();
 
+  const replayTour = () => {
+    start(fullTourSteps);
+  };
+
   return (
     <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r border-zinc-700 bg-black/40 font-mono backdrop-blur-xl">
-      <div className="flex items-center gap-2 px-5 pt-5 pb-4">
+      <motion.div
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="flex items-center gap-2 px-5 pt-5 pb-4"
+      >
         <div className="flex h-7 w-7 items-center justify-center border border-indigo-400/30 bg-linear-to-br from-indigo-500 to-sky-600 shadow-lg shadow-indigo-950/50">
           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-white">
             <path
@@ -44,11 +57,16 @@ export function LeftSidebar() {
         <span className="text-sm font-semibold tracking-wide text-zinc-200">
           Proof<span className="text-indigo-400">Forge</span>
         </span>
-      </div>
+      </motion.div>
 
-      <button
+      <motion.button
         type="button"
         onClick={() => openUserProfile()}
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.05 }}
+        whileHover={{ scale: 1.015 }}
+        whileTap={{ scale: 0.985 }}
         className="mx-4 flex items-center gap-3 border border-zinc-700 bg-zinc-950/70 px-3 py-3 text-left backdrop-blur-sm transition-colors hover:bg-zinc-900"
       >
         <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-linear-to-br from-zinc-700 to-zinc-800 text-sm font-medium text-zinc-300 ring-1 ring-zinc-700">
@@ -60,9 +78,10 @@ export function LeftSidebar() {
           <p className="truncate text-xs tracking-widest text-zinc-500">[WELCOME]</p>
           <p className="truncate text-sm font-semibold text-zinc-100">{displayName}</p>
         </div>
-      </button>
+      </motion.button>
 
-      <nav className="flex-1 space-y-1 px-3 py-5">
+      <nav data-tour="sidebar-nav" className="flex-1 space-y-1 px-3 py-5">
+        <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
         <NavLink
           to="/"
           end
@@ -97,7 +116,9 @@ export function LeftSidebar() {
             </>
           )}
         </NavLink>
+        </motion.div>
 
+        <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3, delay: 0.15 }}>
         <NavLink
           to="/scrutinize"
           className={({ isActive }) =>
@@ -131,7 +152,9 @@ export function LeftSidebar() {
             </>
           )}
         </NavLink>
+        </motion.div>
 
+        <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3, delay: 0.2 }}>
         <NavLink
           to="/debate"
           className={({ isActive }) =>
@@ -165,7 +188,9 @@ export function LeftSidebar() {
             </>
           )}
         </NavLink>
+        </motion.div>
 
+        <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3, delay: 0.25 }}>
         <NavLink
           to="/risk"
           className={({ isActive }) =>
@@ -199,9 +224,27 @@ export function LeftSidebar() {
             </>
           )}
         </NavLink>
+        </motion.div>
       </nav>
 
       <div className="border-t border-zinc-700 px-5 py-4">
+        <motion.button
+          type="button"
+          data-tour="replay-tour"
+          onClick={replayTour}
+          whileHover={{ x: 2 }}
+          whileTap={{ scale: 0.97 }}
+          className="mb-3 flex w-full items-center gap-2 border border-zinc-700 bg-zinc-950/70 px-3 py-2 text-left text-xs tracking-wide text-zinc-400 transition-colors hover:border-indigo-500/40 hover:text-indigo-300"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" className="h-3.5 w-3.5 shrink-0">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+            />
+          </svg>
+          Replay tour
+        </motion.button>
         <div className="flex items-center gap-2">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
           <p className="text-xs tracking-widest text-zinc-600">[PROOFFORGE v0.1]</p>

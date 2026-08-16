@@ -3,6 +3,8 @@ import { LeftSidebar } from "../components/LeftSidebar";
 import backgroundImage from "../assets/Scrutinize_Background.jpg";
 import { useAuth } from "@clerk/react";
 import axios from "axios";
+import { useTourPrefill } from "../tour/useTourPrefill";
+import { DEMO_SCRUTINIZE_TEXT } from "../tour/steps";
 
 
 interface ScrutinizeType {
@@ -44,6 +46,7 @@ export function Scrutinizer() {
   const [text, setText] = useState("")
   const [scrutinizeLogs, setScrutinizeLogs] = useState<ScrutinizeType[]>([])
   const [selectedLog, setSelectedLog] = useState<ScrutinizeType | null>(null)
+  useTourPrefill("scrutinize-intro", !text, () => setText(DEMO_SCRUTINIZE_TEXT));
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -111,7 +114,7 @@ export function Scrutinizer() {
 
         <div className="grid grid-cols-2 gap-6">
           <div className="flex flex-col gap-6">
-          <div className="border border-zinc-700 bg-zinc-950/70 p-4 backdrop-blur-sm">
+          <div data-tour="scrutinize-input" className="border border-zinc-700 bg-zinc-950/70 p-4 backdrop-blur-sm">
             <div className="mb-3 flex items-center justify-between">
               <p className="text-xs tracking-widest text-zinc-500">
                 [{inputMode === "text" ? "TEXT" : "FILE"} INPUT AREA]

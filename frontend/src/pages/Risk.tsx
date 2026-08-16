@@ -3,6 +3,8 @@ import { LeftSidebar } from "../components/LeftSidebar";
 import backgroundImage from "../assets/Risk_Background.jpg";
 import { useAuth } from "@clerk/react";
 import axios from "axios";
+import { useTourPrefill } from "../tour/useTourPrefill";
+import { DEMO_RISK_ANSWERS, DEMO_RISK_DECISION, DEMO_RISK_FALLBACK_ANSWER } from "../tour/steps";
 
 
 interface probingType{
@@ -73,6 +75,23 @@ export function Risk() {
   const [risks, setRisks] = useState<riskType[]>([])
   const [selectedRisk, setSelectedRisk] = useState<riskType | undefined>(undefined)
   const [answers, setAnswers] = useState<Record<string, string>>({})
+
+  useTourPrefill("risk-decision", stage === "terminal" && !decision, () => {
+    setDecision(DEMO_RISK_DECISION);
+  });
+
+  useTourPrefill(
+    "risk-answers",
+    Boolean(selectedRisk?.probing_questions?.length) && Object.keys(answers).length === 0,
+    () => {
+      const prefilled: Record<string, string> = {};
+      selectedRisk?.probing_questions.forEach((q) => {
+        prefilled[q.id] = DEMO_RISK_ANSWERS[q.id] ?? DEMO_RISK_FALLBACK_ANSWER;
+      });
+      setAnswers(prefilled);
+    }
+  );
+
   const reset = () => {
     setDecision("");
     setAnswers({});
@@ -156,7 +175,7 @@ export function Risk() {
         </div>
 
         {stage !== "dashboard" && (
-          <div className="border border-slate-700/50 bg-slate-900/80 p-4 backdrop-blur-sm">
+          <div data-tour="risk-decision-input" className="border border-slate-700/50 bg-slate-900/80 p-4 backdrop-blur-sm">
             <p className="mb-3 text-xs tracking-widest text-zinc-500">[DECISION TERMINAL]</p>
             <textarea
               value={decision}
@@ -279,7 +298,7 @@ export function Risk() {
 
       {stage === "probe" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="flex max-h-[85vh] w-full max-w-md flex-col border border-rose-500/40 bg-slate-950/90 font-mono shadow-[0_0_40px_rgba(244,63,94,0.15)] backdrop-blur-sm">
+          <div data-tour="risk-answers" className="flex max-h-[85vh] w-full max-w-md flex-col border border-rose-500/40 bg-slate-950/90 font-mono shadow-[0_0_40px_rgba(244,63,94,0.15)] backdrop-blur-sm">
             <div className="p-5 pb-1">
               <p className="mb-1 text-xs tracking-widest text-amber-400">[DIAGNOSTIC CROSS-EXAMINATION]</p>
               <p className="text-xs text-zinc-500">
