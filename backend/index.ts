@@ -114,9 +114,10 @@ app.post("/scrutinize/:userId", async(req, res) => {
       ],
       temperature: 0
     })
-    const result = completions.choices[0].message.content ?? "{}"
+    const result = completions.choices?.[0]?.message?.content ?? "{}"
     const data = JSON.parse(result)
-    return res.json(data)
+    const dbInsert = await pool.query("INSERT INTO scrutinize(user_id, content, premise, logic, flags, flag_count) VALUES($1, $2, $3, $4, $5, $6) RETURNING *", [id.rows[0].id, text, data.extractedPremise, JSON.stringify(data.logic || []), JSON.stringify(data.flags || []), (data.flags || []).length])
+    return res.json(dbInsert.rows[0])
   }
 })
 
