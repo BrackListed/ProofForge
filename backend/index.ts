@@ -128,5 +128,13 @@ app.post("/scrutinize/:userId", async(req, res) => {
   }
 })
 
+app.post("/create-room/:userId", async(req, res) => {
+  const {userId} = req.params
+  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
+  const {title, topic} = req.body
+  const result = await pool.query("INSERT INTO debate_room(user_id, title, topic) VALUES($1, $2, $3) RETURNING id", [id.rows[0].id, title, topic])
+  res.json(result.rows[0].id)
+})
+
 const PORT = process.env.PORT || 5000
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`))

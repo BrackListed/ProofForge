@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { LeftSidebar } from "../components/LeftSidebar";
 import backgroundImage from "../assets/Debate_Background.jpg";
+import { useAuth } from "@clerk/react";
+import axios from "axios";
 
 interface SpeechRecognitionResultLike {
   isFinal: boolean;
@@ -23,12 +25,6 @@ interface SpeechRecognitionLike {
   stop: () => void;
 }
 
-interface Room {
-  id: string;
-  name: string;
-  topic: string;
-}
-
 const SpeechRecognitionCtor: (new () => SpeechRecognitionLike) | undefined =
   (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionLike }).SpeechRecognition ??
   (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognitionLike }).webkitSpeechRecognition;
@@ -40,27 +36,19 @@ function formatTime(totalSeconds: number) {
 }
 
 export function Debate() {
-  const [rooms, setRooms] = useState<Room[]>([
-    { id: "room-1", name: "Death Penalty", topic: "Should the death penalty be abolished worldwide?" },
-    { id: "room-2", name: "AI Regulation", topic: "Should governments heavily regulate AI development?" },
-  ]);
-  const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
-
+  const [inRoom, setInRoom] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [roomNameInput, setRoomNameInput] = useState("");
-  const [topicInput, setTopicInput] = useState("");
-
+  const [roomName, setRoomName] = useState("");
+  const [topic, setTopic] = useState("");
   const [argument, setArgument] = useState("");
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isDone, setIsDone] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [seconds, setSeconds] = useState(0);
-
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const baseTextRef = useRef("");
-
-  const activeRoom = rooms.find((r) => r.id === activeRoomId) ?? null;
-
+  const {userId, getToken} = useAuth()
+  const [roomId, setRoomId] = useState('')
   useEffect(() => {
     if (!hasStarted || isDone) return;
     const interval = setInterval(() => setSeconds((s) => s + 1), 1000);
@@ -115,49 +103,6 @@ export function Debate() {
     }
   };
 
-  const handleDone = () => {
-    if (isSpeaking) recognitionRef.current?.stop();
-    setIsSpeaking(false);
-    setIsDone(true);
-  };
-
-  const resetDebateState = () => {
-    if (isSpeaking) recognitionRef.current?.stop();
-    setArgument("");
-    setIsSpeaking(false);
-    setIsDone(false);
-    setHasStarted(false);
-    setSeconds(0);
-  };
-
-  const openRoom = (id: string) => {
-    resetDebateState();
-    setActiveRoomId(id);
-  };
-
-  const backToRooms = () => {
-    if (isSpeaking) recognitionRef.current?.stop();
-    setIsSpeaking(false);
-    setActiveRoomId(null);
-  };
-
-  const openCreateModal = () => {
-    setRoomNameInput("");
-    setTopicInput("");
-    setIsCreateOpen(true);
-  };
-
-  const createRoom = () => {
-    const name = roomNameInput.trim();
-    const topic = topicInput.trim();
-    if (!name || !topic) return;
-
-    const newRoom: Room = { id: crypto.randomUUID(), name, topic };
-    setRooms((prev) => [...prev, newRoom]);
-    setIsCreateOpen(false);
-    openRoom(newRoom.id);
-  };
-
   return (
     <div className="relative flex min-h-screen font-mono text-zinc-300">
       <div
@@ -176,20 +121,24 @@ export function Debate() {
           backgroundSize: "28px 28px",
         }}
       >
-        {activeRoom ? (
+        {inRoom ? (
           <>
             <header className="mb-6">
               <button
                 type="button"
-                onClick={backToRooms}
+                onClick={() => {
+                  if (isSpeaking) recognitionRef.current?.stop();
+                  setIsSpeaking(false);
+                  setInRoom(false);
+                }}
                 className="mb-3 text-xs tracking-wide text-zinc-500 transition-colors hover:text-red-400"
               >
                 &larr; Back to Rooms
               </button>
               <h1 className="text-lg font-semibold tracking-wide text-zinc-100">
-                {activeRoom.name} <span className="text-red-400">[LIVE]</span>
+                {roomName} <span className="text-red-400">[LIVE]</span>
               </h1>
-              <p className="mt-1 text-xs text-zinc-500">Topic: {activeRoom.topic}</p>
+              <p className="mt-1 text-xs text-zinc-500">Topic: {topic}</p>
             </header>
 
             <div className="grid grid-cols-2 gap-6">
@@ -262,7 +211,11 @@ export function Debate() {
               <button
                 type="button"
                 disabled={isDone}
-                onClick={handleDone}
+                onClick={() => {
+                  if (isSpeaking) recognitionRef.current?.stop();
+                  setIsSpeaking(false);
+                  setIsDone(true);
+                }}
                 className="border border-zinc-700 px-10 py-2.5 text-sm tracking-wide text-zinc-300 transition-colors hover:border-red-500/50 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {isDone ? "✓ Done" : "> Done <"}
@@ -282,29 +235,41 @@ export function Debate() {
               </div>
               <button
                 type="button"
-                onClick={openCreateModal}
+                onClick={() => {
+                  setRoomName("");
+                  setTopic("");
+                  setIsCreateOpen(true);
+                }}
                 className="border border-zinc-700 bg-zinc-950/70 px-4 py-2 text-xs tracking-wide text-zinc-300 backdrop-blur-sm transition-colors hover:border-red-500/50 hover:text-red-400"
               >
                 + Create Room
               </button>
             </header>
 
-            <p className="mb-3 text-xs tracking-widest text-zinc-500">[ROOMS] ({rooms.length} active)</p>
+            <p className="mb-3 text-xs tracking-widest text-zinc-500">[ROOMS]</p>
             <div className="grid grid-cols-3 gap-4">
-              {rooms.map((room) => (
-                <button
-                  key={room.id}
-                  type="button"
-                  onClick={() => openRoom(room.id)}
-                  className="group border border-zinc-700 bg-zinc-950/70 p-4 text-left backdrop-blur-sm transition-colors hover:border-red-500/50 hover:bg-zinc-900"
-                >
-                  <p className="mb-2 text-xs tracking-widest text-red-400">[{room.name.toUpperCase()}]</p>
-                  <p className="text-xs leading-relaxed text-zinc-500">Topic: {room.topic}</p>
-                  <span className="mt-2 inline-block text-xs text-red-400 opacity-0 transition-opacity group-hover:opacity-100">
-                    Enter &rarr;
-                  </span>
-                </button>
-              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setRoomName("Sample Debate Room");
+                  setTopic("Should social media be regulated like a public utility?");
+                  setArgument("");
+                  setIsSpeaking(false);
+                  setIsDone(false);
+                  setHasStarted(false);
+                  setSeconds(0);
+                  setInRoom(true);
+                }}
+                className="group border border-zinc-700 bg-zinc-950/70 p-4 text-left backdrop-blur-sm transition-colors hover:border-red-500/50 hover:bg-zinc-900"
+              >
+                <p className="mb-2 text-xs tracking-widest text-red-400">[SAMPLE DEBATE ROOM]</p>
+                <p className="text-xs leading-relaxed text-zinc-500">
+                  Topic: Should social media be regulated like a public utility?
+                </p>
+                <span className="mt-2 inline-block text-xs text-red-400 opacity-0 transition-opacity group-hover:opacity-100">
+                  Enter &rarr;
+                </span>
+              </button>
             </div>
           </>
         )}
@@ -318,8 +283,8 @@ export function Debate() {
             <label className="mb-1 block text-xs text-zinc-500">Room Name</label>
             <input
               type="text"
-              value={roomNameInput}
-              onChange={(e) => setRoomNameInput(e.target.value)}
+              value={roomName}
+              onChange={(e) => setRoomName(e.target.value)}
               placeholder="e.g. Universal Basic Income"
               className="mb-4 w-full border border-zinc-800 bg-black/60 p-2 text-sm text-zinc-300 outline-none focus:border-red-500/50"
             />
@@ -327,8 +292,8 @@ export function Debate() {
             <label className="mb-1 block text-xs text-zinc-500">Topic to Debate</label>
             <input
               type="text"
-              value={topicInput}
-              onChange={(e) => setTopicInput(e.target.value)}
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
               placeholder="e.g. Should UBI replace existing welfare programs?"
               className="mb-5 w-full border border-zinc-800 bg-black/60 p-2 text-sm text-zinc-300 outline-none focus:border-red-500/50"
             />
@@ -343,8 +308,17 @@ export function Debate() {
               </button>
               <button
                 type="button"
-                onClick={createRoom}
-                disabled={!roomNameInput.trim() || !topicInput.trim()}
+                disabled={!roomName.trim() || !topic.trim()}
+                onClick={() => {
+                  setIsCreateOpen(false);
+                  setArgument("");
+                  setIsSpeaking(false);
+                  setIsDone(false);
+                  setHasStarted(false);
+                  setSeconds(0);
+                  setInRoom(true);
+                  createRoom(roomName, topic, userId)
+                }}
                 className="border border-zinc-700 px-4 py-2 text-xs tracking-wide text-zinc-300 transition-colors hover:border-red-500/50 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 &gt; Create &lt;
@@ -356,7 +330,9 @@ export function Debate() {
     </div>
   );
 
-  async function processArgument(argument: string){
-
+  async function createRoom(title: string, topic: string, userId: string | undefined | null){
+    const token = getToken()
+    const result = await axios.post(`http://localhost:5000/create-room/${userId}`, {title: title, topic: topic}, {headers: {Authorization: `Bearer ${token}`}})
+    setRoomId(result.data)
   }
 }

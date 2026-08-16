@@ -34,6 +34,37 @@ export const scrutinize = pgTable("scrutinize", {
     created_at: timestamp("created_at", {withTimezone: true}).defaultNow().notNull()
 })
 
+export const debate_room = pgTable("debate_room", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    user_id: uuid("user_id").references(() => users.id, {onDelete: "cascade"}),
+    title: text('title').notNull().default("No title"),
+    topic: text("topic").notNull(),
+})
+
+export const debate_logs = pgTable("debate_logs", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    user_id: uuid("user_id").references(() => users.id, {onDelete: "cascade"}),
+    room_id: uuid("room_id").references(() => debate_room.id, {onDelete: "cascade"}),
+    transcript: jsonb("transcript").$type<
+    Array<{
+      sender: "user" | "ai";
+      text: string;
+    }>
+    >().default([]).notNull(),
+    updated_at: timestamp("updated_at").defaultNow().notNull()
+})
+
+export const debateRoomRelations = relations(debate_room, ({ many }) => ({
+    logs: many(debate_logs)
+}))
+
+export const debateLogsRelations = relations(debate_logs, ({ one }) => ({
+    room: one(debate_room, {
+        fields: [debate_logs.room_id],
+        references: [debate_room.id]
+    })
+}))
+
 export const usersRelations = relations(users, ({ many }) => ({
     scrutinizeLogs: many(scrutinize)
 }))
