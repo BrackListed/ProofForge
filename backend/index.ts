@@ -17,6 +17,10 @@ import OpenAI from 'openai';
 // Dynamically handles your local dev or your deployed Render frontend URL
 const allowedOrigin = process.env.FRONTEND_URL || "http://localhost:5173"
 
+interface transcriptType{
+  sender: "ai" | "user" 
+  text: string
+}
 app.use(cors({
   origin: [allowedOrigin], 
   credentials: true
@@ -125,8 +129,7 @@ app.post("/scrutinize/:userId", async(req, res) => {
         role: "user",
         content: text
       }
-      ],
-      temperature: 0
+      ]
     })
     const result = completions.choices?.[0]?.message?.content ?? "{}"
     const data = JSON.parse(result)
@@ -141,6 +144,50 @@ app.post("/create-room/:userId", async(req, res) => {
   const {title, topic} = req.body
   const result = await pool.query("INSERT INTO debate_room(user_id, title, topic) VALUES($1, $2, $3) RETURNING id", [id.rows[0].id, title, topic])
   res.json(result.rows[0].id)
+})
+
+app.post("/process-argument/:userId/:roomId", async(req, res) => {
+  const {userId, roomId} = req.params
+  const {argument} = req.body
+  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
+  const result = await pool.query("SELECT transcript FROM debate_logs WHERE user_id = $1 AND room_id = $2", [id.rows[0].id, roomId])
+  let transcript = []
+  if (result.rows.length > 0) {
+    transcript = result.rows[0].transcript;
+  }
+  const completions = await client.chat.completions.create({
+    model: "meta-llama/Meta-Llama-3.1-8B-Instruct",
+    response_format: {type: "json_object"},
+    messages: [{
+      role: "system",
+      content: `You are an expert debate opponent. Review the conversation history. Call out evasions or weak points from previous turns if unaddressed, then cross-examine the latest argument. You MUST respond strictly in JSON using this exact format: 
+      { 
+        "response": your full rebuttal and cross-examination here
+      }` 
+    },
+    {
+      role: "user",
+      content: `Here is the full conversation history: \n ${JSON.stringify(transcript)}`
+    },
+    {
+      role: "user",
+      content: argument
+    }
+    ]
+  })
+  const reply = completions.choices[0]?.message?.content ?? "{}";
+  const parsedReply = JSON.parse(reply);
+  transcript.push({
+    sender: "user",
+    text: argument
+  })
+  transcript.push({
+    sender: "ai",
+    text: reply
+  })
+
+  await pool.query("UPDATE debate_logs SET transcript = $1, updated_at = NOW() WHERE room_id = $2 AND user_id = $3", [JSON.stringify(transcript), roomId, id.rows[0].id])
+  return res.json(parsedReply)
 })
 
 const PORT = process.env.PORT || 5000

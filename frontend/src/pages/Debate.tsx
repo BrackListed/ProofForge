@@ -235,6 +235,7 @@ export function Debate() {
                   if (isSpeaking) recognitionRef.current?.stop();
                   setIsSpeaking(false);
                   setIsDone(true);
+                  processArgument(argument, userId, roomId)
                 }}
                 className="border border-zinc-700 px-10 py-2.5 text-sm tracking-wide text-zinc-300 transition-colors hover:border-red-500/50 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
               >
@@ -352,10 +353,18 @@ export function Debate() {
   );
 
   async function createRoom(title: string, topic: string, userId: string | undefined | null){
+    if(!userId) return 
     const token = await getToken()
     const result = await axios.post(`http://localhost:5000/create-room/${userId}`, {title: title, topic: topic}, {headers: {Authorization: `Bearer ${token}`}})
     const newRoom: roomType = { id: result.data, user_id: userId ?? "", title, topic }
     setRooms((prev) => [...prev, newRoom])
     setRoomId(newRoom.id)
+  }
+
+  async function processArgument(argument: string, userId: string | undefined | null, roomId: string){
+    if(!userId) return 
+    const token = await getToken()
+    const result = await axios.post(`http://localhost:5000/process-argument/${userId}/${roomId}`, {argument: argument}, {headers: {Authorization: `Bearer ${token}`}})
+    console.log(result.data.response)
   }
 }
