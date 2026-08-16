@@ -72,6 +72,13 @@ app.get("/logs/scrutinize/:userId", async(req, res) => {
   res.json(result.rows)
 })
 
+app.get("/rooms/:userId", async(req, res) => {
+  const {userId} = req.params
+  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
+  const result = await pool.query("SELECT * FROM debate_room WHERE user_id = $1", [id.rows[0].id])
+  res.json(result.rows)
+})
+
 app.post("/scrutinize/:userId", async(req, res) => {
   const {userId} = req.params
   const {text, file} = req.body
