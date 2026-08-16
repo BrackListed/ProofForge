@@ -21,15 +21,26 @@ export const scrutinize = pgTable("scrutinize", {
         claim: string
         relation: {
             type: 'CAUSE' | 'EVIDENCE' | 'INFERENCE' | 'CONTRADICTION' | 'SUB-CLAIM';
-            targetStep: number;
+            targetStep: number | null;
         }
-        flag_type: "UNPROV." | "ABSOL." | "WEAK."
-    }>().notNull(),
+        flagType: "UNPROV." | "ABSOL." | "WEAK." | null
+    }[]>().notNull(),
     flags: jsonb("flags").$type<{
         type: 'UNPROV.' | 'ABSOL.' | 'WEAK.'
         instance: string
         critique: string
-    }>(),
+    }[]>(),
     flag_count: integer("flag_count").default(0).notNull(),
     created_at: timestamp("created_at", {withTimezone: true}).defaultNow().notNull()
 })
+
+export const usersRelations = relations(users, ({ many }) => ({
+    scrutinizeLogs: many(scrutinize)
+}))
+
+export const scrutinizeRelations = relations(scrutinize, ({ one }) => ({
+    user: one(users, {
+        fields: [scrutinize.user_id],
+        references: [users.id]
+    })
+}))

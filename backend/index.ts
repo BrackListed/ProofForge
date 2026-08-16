@@ -65,6 +65,13 @@ app.get("/test", (req, res) => {
   res.json({ message: "Backend is alive and connected!" })
 })
 
+app.get("/logs/scrutinize/:userId", async(req, res) => {
+  const {userId} = req.params
+  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
+  const result = await pool.query("SELECT * FROM scrutinize WHERE user_id = $1 ORDER BY created_at DESC", [id.rows[0].id])
+  res.json(result.rows)
+})
+
 app.post("/scrutinize/:userId", async(req, res) => {
   const {userId} = req.params
   const {text, file} = req.body
