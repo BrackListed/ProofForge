@@ -31,9 +31,9 @@ export function LeftSidebar() {
   const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-white/10 bg-black/25 backdrop-blur-xl">
+    <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-zinc-700 bg-black/40 font-mono backdrop-blur-xl">
       <div className="flex items-center gap-2 px-5 pt-5 pb-4">
-        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-linear-to-br from-indigo-500 to-sky-600 shadow-lg shadow-indigo-950/50">
+        <div className="flex h-7 w-7 items-center justify-center border border-indigo-400/30 bg-linear-to-br from-indigo-500 to-sky-600 shadow-lg shadow-indigo-950/50">
           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-white">
             <path
               d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"
@@ -49,7 +49,7 @@ export function LeftSidebar() {
       <button
         type="button"
         onClick={() => openUserProfile()}
-        className="mx-4 flex items-center gap-3 rounded-xl border border-zinc-500/20 bg-zinc-800/30 px-3 py-3 text-left backdrop-blur-md transition-colors hover:bg-zinc-800/50"
+        className="mx-4 flex items-center gap-3 border border-zinc-700 bg-zinc-950/70 px-3 py-3 text-left backdrop-blur-sm transition-colors hover:bg-zinc-900"
       >
         <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-linear-to-br from-zinc-700 to-zinc-800 text-sm font-medium text-zinc-300 ring-1 ring-zinc-700">
           <span>{initials}</span>
@@ -57,7 +57,7 @@ export function LeftSidebar() {
           <span className="absolute right-0 bottom-0 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-zinc-900" />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-xs text-zinc-500">Welcome,</p>
+          <p className="truncate text-xs tracking-widest text-zinc-500">[WELCOME]</p>
           <p className="truncate text-sm font-semibold text-zinc-100">{displayName}</p>
         </div>
       </button>
@@ -67,8 +67,8 @@ export function LeftSidebar() {
           to="/"
           end
           className={({ isActive }) =>
-            `group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
-              isActive ? accentClasses.indigo.active : "text-zinc-400 hover:bg-zinc-800/30 hover:text-zinc-100"
+            `group relative flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors ${
+              isActive ? accentClasses.indigo.active : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
             }`
           }
         >
@@ -101,8 +101,8 @@ export function LeftSidebar() {
         <NavLink
           to="/scrutinize"
           className={({ isActive }) =>
-            `group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
-              isActive ? accentClasses.sky.active : "text-zinc-400 hover:bg-zinc-800/30 hover:text-zinc-100"
+            `group relative flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors ${
+              isActive ? accentClasses.sky.active : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
             }`
           }
         >
@@ -135,8 +135,8 @@ export function LeftSidebar() {
         <NavLink
           to="/debate"
           className={({ isActive }) =>
-            `group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
-              isActive ? accentClasses.red.active : "text-zinc-400 hover:bg-zinc-800/30 hover:text-zinc-100"
+            `group relative flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors ${
+              isActive ? accentClasses.red.active : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
             }`
           }
         >
@@ -169,8 +169,8 @@ export function LeftSidebar() {
         <NavLink
           to="/risk"
           className={({ isActive }) =>
-            `group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
-              isActive ? accentClasses.amber.active : "text-zinc-400 hover:bg-zinc-800/30 hover:text-zinc-100"
+            `group relative flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors ${
+              isActive ? accentClasses.amber.active : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
             }`
           }
         >
@@ -201,10 +201,10 @@ export function LeftSidebar() {
         </NavLink>
       </nav>
 
-      <div className="border-t border-zinc-500/20 px-5 py-4">
+      <div className="border-t border-zinc-700 px-5 py-4">
         <div className="flex items-center gap-2">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-          <p className="text-xs text-zinc-600">ProofForge v0.1</p>
+          <p className="text-xs tracking-widest text-zinc-600">[PROOFFORGE v0.1]</p>
         </div>
       </div>
     </aside>
