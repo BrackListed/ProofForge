@@ -1,9 +1,39 @@
 import { useState } from "react";
 import { SignIn, SignUp } from "@clerk/react";
+import { useSignIn } from "@clerk/react/legacy";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import backgroundImage from "../assets/Intermission_Background.jpg";
 
 export function Intermission() {
   const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
+  const { isLoaded, signIn, setActive } = useSignIn();
+  const [guestLoading, setGuestLoading] = useState(false);
+  const [guestError, setGuestError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const continueAsGuest = async () => {
+    if (!isLoaded || guestLoading) return;
+    setGuestLoading(true);
+    setGuestError(null);
+    try {
+      // The backend mints a one-time Clerk sign-in token for the fixed guest
+      // account — this completes immediately with no password or second
+      // factor, sidestepping Clerk's device-trust challenge entirely.
+      const { data } = await axios.post<{ token: string }>("http://localhost:5000/guest-token");
+      const result = await signIn.create({ strategy: "ticket", ticket: data.token });
+      if (result.status === "complete" && result.createdSessionId) {
+        await setActive({ session: result.createdSessionId });
+        navigate("/");
+      } else {
+        setGuestError("Guest sign-in didn't complete. Try again.");
+      }
+    } catch {
+      setGuestError("Couldn't sign in as guest right now.");
+    } finally {
+      setGuestLoading(false);
+    }
+  };
 
   return (
     <div className="relative flex min-h-screen items-center justify-center text-zinc-100">
@@ -50,6 +80,22 @@ export function Intermission() {
         </div>
 
         {mode === "sign-in" ? <SignIn routing="hash" /> : <SignUp routing="hash" />}
+
+        <div className="mt-6 flex w-full max-w-100 items-center gap-3">
+          <div className="h-px flex-1 bg-zinc-500/20" />
+          <span className="text-xs tracking-wide text-zinc-500">OR</span>
+          <div className="h-px flex-1 bg-zinc-500/20" />
+        </div>
+
+        <button
+          type="button"
+          onClick={continueAsGuest}
+          disabled={!isLoaded || guestLoading}
+          className="mt-4 w-full max-w-100 rounded-full border border-zinc-500/20 bg-zinc-800/30 py-2.5 text-sm font-medium text-zinc-200 backdrop-blur-md transition-colors hover:bg-zinc-800/50 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {guestLoading ? "Signing in…" : "Continue as Guest"}
+        </button>
+        {guestError && <p className="mt-2 text-center text-xs text-red-400">{guestError}</p>}
       </div>
     </div>
   );

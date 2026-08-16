@@ -3,7 +3,7 @@ import express from "express"
 import cors from "cors"
 import { Pool } from "pg"
 import { drizzle } from "drizzle-orm/node-postgres"
-import { clerkMiddleware } from '@clerk/express'
+import { clerkClient, clerkMiddleware } from '@clerk/express'
 import { verifyWebhook } from "@clerk/express/webhooks"
 import Groq from "groq-sdk";
 import multer from "multer"
@@ -13,6 +13,20 @@ const pool = new Pool({connectionString: process.env.DATABASE_URL})
 const db = drizzle(process.env.DATABASE_URL!)
 
 const GROQ_MODEL = "llama-3.3-70b-versatile"
+const GUEST_CLERK_USER_ID = "user_3I0S3d8ipBqUlXGP7TilYrLagbv"
+
+async function getOrCreateUserId(userId: string){
+  const existing = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
+  if(existing.rows[0]?.id) return existing.rows[0].id as string
+  const clerkUser = await clerkClient.users.getUser(userId)
+  const email = clerkUser.emailAddresses[0]?.emailAddress ?? ""
+  const username = clerkUser.username ?? clerkUser.firstName ?? userId
+  const inserted = await pool.query(
+    "INSERT INTO users(clerk_user_id, email, username) VALUES($1, $2, $3) RETURNING id",
+    [userId, email, username]
+  )
+  return inserted.rows[0].id as string
+}
 
 
 // Dynamically handles your local dev or your deployed Render frontend URL
@@ -69,45 +83,59 @@ app.get("/test", (req, res) => {
   res.json({ message: "Backend is alive and connected!" })
 })
 
+app.post("/guest-token", async(req, res) => {
+  try{
+    await getOrCreateUserId(GUEST_CLERK_USER_ID)
+    const signInToken = await clerkClient.signInTokens.createSignInToken({
+      userId: GUEST_CLERK_USER_ID,
+      expiresInSeconds: 60,
+    })
+    res.json({ token: signInToken.token })
+  } catch(err){
+    console.error("Error creating guest sign-in token", err)
+    res.status(500).json({ error: "Could not create guest sign-in token" })
+  }
+})
+
 app.get("/logs/scrutinize/:userId", async(req, res) => {
   const {userId} = req.params
-  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
-  const result = await pool.query("SELECT * FROM scrutinize WHERE user_id = $1 ORDER BY created_at DESC", [id.rows[0].id])
+  const dbUserId = await getOrCreateUserId(userId)
+  const result = await pool.query("SELECT * FROM scrutinize WHERE user_id = $1 ORDER BY created_at DESC", [dbUserId])
   res.json(result.rows)
 })
 
 app.get("/rooms/:userId", async(req, res) => {
   const {userId} = req.params
-  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
-  const result = await pool.query("SELECT * FROM debate_room WHERE user_id = $1", [id.rows[0].id])
+  const dbUserId = await getOrCreateUserId(userId)
+  const result = await pool.query("SELECT * FROM debate_room WHERE user_id = $1", [dbUserId])
   res.json(result.rows)
 })
 
 app.delete("/rooms/:userId/:roomId", async(req, res) => {
   const {userId, roomId} = req.params
-  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
-  const result = await pool.query("DELETE FROM debate_room WHERE id = $1 AND user_id = $2 RETURNING id", [roomId, id.rows[0].id])
+  const dbUserId = await getOrCreateUserId(userId)
+  const result = await pool.query("DELETE FROM debate_room WHERE id = $1 AND user_id = $2 RETURNING id", [roomId, dbUserId])
   if(result.rows.length === 0) return res.status(404).json({error: "Room not found"})
   res.json({id: result.rows[0].id})
 })
 
 app.get("/debate/logs/:roomId/:userId", async(req, res) => {
   const {userId, roomId} = req.params
-  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
-  const result = await pool.query("SELECT transcript FROM debate_logs WHERE room_id = $1 AND user_id = $2", [roomId, id.rows[0].id])
+  const dbUserId = await getOrCreateUserId(userId)
+  const result = await pool.query("SELECT transcript FROM debate_logs WHERE room_id = $1 AND user_id = $2", [roomId, dbUserId])
   res.json(result.rows)
 })
 
 app.get("/risks/:userId", async(req, res) => {
   const {userId} = req.params
-  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
-  const result = await pool.query("SELECT * FROM risks WHERE user_id = $1", [id.rows[0].id])
+  const dbUserId = await getOrCreateUserId(userId)
+  const result = await pool.query("SELECT * FROM risks WHERE user_id = $1", [dbUserId])
   res.json(result.rows)
 })
 
 app.get("/activity/:userId", async(req, res) => {
   const {userId} = req.params
-  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
+  const dbUserId = await getOrCreateUserId(userId)
   const result = await pool.query(`
     SELECT 'Text Scrutinizer' AS tool, LEFT(content, 140) AS summary,
       CASE WHEN flag_count = 0 THEN 'No issues flagged' ELSE flag_count || ' issue' || CASE WHEN flag_count = 1 THEN '' ELSE 's' END || ' flagged' END AS verdict,
@@ -135,17 +163,17 @@ app.get("/activity/:userId", async(req, res) => {
 
     ORDER BY date DESC
     LIMIT 8
-  `, [id.rows[0].id])
+  `, [dbUserId])
   res.json(result.rows)
 })
 
 app.get("/stats/:userId", async(req, res) => {
   const {userId} = req.params
-  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
+  const dbUserId = await getOrCreateUserId(userId)
   const [scrutinized, debates, risks] = await Promise.all([
-    pool.query("SELECT COUNT(*) FROM scrutinize WHERE user_id = $1", [id.rows[0].id]),
-    pool.query("SELECT COUNT(*) FROM debate_room WHERE user_id = $1", [id.rows[0].id]),
-    pool.query("SELECT COUNT(*) FROM risks WHERE user_id = $1", [id.rows[0].id]),
+    pool.query("SELECT COUNT(*) FROM scrutinize WHERE user_id = $1", [dbUserId]),
+    pool.query("SELECT COUNT(*) FROM debate_room WHERE user_id = $1", [dbUserId]),
+    pool.query("SELECT COUNT(*) FROM risks WHERE user_id = $1", [dbUserId]),
   ])
   res.json({
     scrutinized: Number(scrutinized.rows[0].count),
@@ -157,7 +185,7 @@ app.get("/stats/:userId", async(req, res) => {
 app.post("/scrutinize/:userId", async(req, res) => {
   const {userId} = req.params
   const {text, file} = req.body
-  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
+  const dbUserId = await getOrCreateUserId(userId)
   if(text){
     const completions = await client.chat.completions.create({
       model: GROQ_MODEL,
@@ -204,24 +232,24 @@ app.post("/scrutinize/:userId", async(req, res) => {
     })
     const result = completions.choices?.[0]?.message?.content ?? "{}"
     const data = JSON.parse(result)
-    const dbInsert = await pool.query("INSERT INTO scrutinize(user_id, content, premise, logic, flags, flag_count) VALUES($1, $2, $3, $4, $5, $6) RETURNING *", [id.rows[0].id, text, data.extractedPremise, JSON.stringify(data.logic || []), JSON.stringify(data.flags || []), (data.flags || []).length])
+    const dbInsert = await pool.query("INSERT INTO scrutinize(user_id, content, premise, logic, flags, flag_count) VALUES($1, $2, $3, $4, $5, $6) RETURNING *", [dbUserId, text, data.extractedPremise, JSON.stringify(data.logic || []), JSON.stringify(data.flags || []), (data.flags || []).length])
     return res.json(dbInsert.rows[0])
   }
 })
 
 app.post("/create-room/:userId", async(req, res) => {
   const {userId} = req.params
-  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
+  const dbUserId = await getOrCreateUserId(userId)
   const {title, topic} = req.body
-  const result = await pool.query("INSERT INTO debate_room(user_id, title, topic) VALUES($1, $2, $3) RETURNING id", [id.rows[0].id, title, topic])
+  const result = await pool.query("INSERT INTO debate_room(user_id, title, topic) VALUES($1, $2, $3) RETURNING id", [dbUserId, title, topic])
   res.json(result.rows[0].id)
 })
 
 app.post("/process-argument/:userId/:roomId", async(req, res) => {
   const {userId, roomId} = req.params
   const {argument} = req.body
-  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
-  const result = await pool.query("SELECT transcript FROM debate_logs WHERE user_id = $1 AND room_id = $2", [id.rows[0].id, roomId])
+  const dbUserId = await getOrCreateUserId(userId)
+  const result = await pool.query("SELECT transcript FROM debate_logs WHERE user_id = $1 AND room_id = $2", [dbUserId, roomId])
   let transcript = []
   if (result.rows.length > 0) {
     transcript = result.rows[0].transcript;
@@ -258,14 +286,14 @@ app.post("/process-argument/:userId/:roomId", async(req, res) => {
     sender: "ai",
     text: parsedReply
   })
-  await pool.query(`INSERT INTO debate_logs(user_id, room_id, transcript, updated_at) VALUES($1, $2, $3, NOW()) ON CONFLICT(user_id, room_id) DO UPDATE SET transcript = $3, updated_at = NOW()`, [id.rows[0].id, roomId, JSON.stringify(transcript)])
+  await pool.query(`INSERT INTO debate_logs(user_id, room_id, transcript, updated_at) VALUES($1, $2, $3, NOW()) ON CONFLICT(user_id, room_id) DO UPDATE SET transcript = $3, updated_at = NOW()`, [dbUserId, roomId, JSON.stringify(transcript)])
   return res.json(parsedReply)
 })
 
 app.post("/analyze-risk/:userId", async(req, res) => {
   const {userId} = req.params
   const {decision} = req.body
-  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
+  const dbUserId = await getOrCreateUserId(userId)
   const completions = await client.chat.completions.create({
     model: GROQ_MODEL,
     response_format: {type: "json_object"},
@@ -287,7 +315,7 @@ app.post("/analyze-risk/:userId", async(req, res) => {
   })
   const response = completions.choices[0]?.message?.content ?? "{}"
   const parsedResponse = JSON.parse(response)
-  const result = await pool.query("INSERT INTO risks(user_id, status, initial_decision, category, probing_questions) VALUES($1, $2, $3, $4, $5) RETURNING *", [id.rows[0].id, "PROBING", decision, parsedResponse.category, JSON.stringify(parsedResponse.probing_questions)])
+  const result = await pool.query("INSERT INTO risks(user_id, status, initial_decision, category, probing_questions) VALUES($1, $2, $3, $4, $5) RETURNING *", [dbUserId, "PROBING", decision, parsedResponse.category, JSON.stringify(parsedResponse.probing_questions)])
   res.json(result.rows[0])
 })
 
