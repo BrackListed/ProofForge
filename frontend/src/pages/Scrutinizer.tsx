@@ -4,6 +4,7 @@ import backgroundImage from "../assets/Scrutinize_Background.jpg";
 import { useAuth } from "@clerk/react";
 import axios from "axios";
 import { useTourPrefill } from "../tour/useTourPrefill";
+import { useTourReady } from "../tour/useTourReady";
 import { DEMO_SCRUTINIZE_TEXT } from "../tour/steps";
 
 
@@ -47,6 +48,7 @@ export function Scrutinizer() {
   const [scrutinizeLogs, setScrutinizeLogs] = useState<ScrutinizeType[]>([])
   const [selectedLog, setSelectedLog] = useState<ScrutinizeType | null>(null)
   useTourPrefill("scrutinize-intro", !text, () => setText(DEMO_SCRUTINIZE_TEXT));
+  useTourReady("scrutinize-intro", Boolean(selectedLog && selectedLog.content === DEMO_SCRUTINIZE_TEXT));
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);

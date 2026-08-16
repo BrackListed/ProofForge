@@ -6,6 +6,17 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const [isActive, setIsActive] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [steps, setSteps] = useState<TourStep[]>([]);
+  const [isStepReady, setIsStepReady] = useState(false);
+  // Each step starts un-ready — a fresh step never inherits the previous
+  // step's "the real action already happened" flag. Adjusted during render
+  // (React's documented pattern for resetting state when a value changes)
+  // rather than in an effect, since this is TourProvider reacting to its
+  // own stepIndex, not synchronizing with anything external.
+  const [readyForStepIndex, setReadyForStepIndex] = useState(stepIndex);
+  if (readyForStepIndex !== stepIndex) {
+    setReadyForStepIndex(stepIndex);
+    setIsStepReady(false);
+  }
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -16,6 +27,10 @@ export function TourProvider({ children }: { children: ReactNode }) {
       navigate(step.route);
     }
   }, [isActive, stepIndex, steps, location.pathname, navigate]);
+
+  const setStepReady = useCallback((ready: boolean) => {
+    setIsStepReady(ready);
+  }, []);
 
   const start = useCallback((newSteps: TourStep[]) => {
     setSteps(newSteps);
@@ -42,7 +57,9 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const currentStepId = isActive ? (steps[stepIndex]?.id ?? null) : null;
 
   return (
-    <TourContext.Provider value={{ isActive, stepIndex, steps, currentStepId, start, next, skip }}>
+    <TourContext.Provider
+      value={{ isActive, stepIndex, steps, currentStepId, isStepReady, start, next, skip, setStepReady }}
+    >
       {children}
     </TourContext.Provider>
   );

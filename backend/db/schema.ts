@@ -15,7 +15,7 @@ export const scrutinize = pgTable("scrutinize", {
     content: text('content').notNull(),
     document_name: text("document_name"),
     page_number: text("page_number"),
-    premise: text("premise").notNull(),
+    premise: text("premise"),
     logic: jsonb("logic").$type<{
         step: number
         claim: string

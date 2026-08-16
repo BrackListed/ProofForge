@@ -30,7 +30,7 @@ export const fullTourSteps: TourStep[] = [
     route: "/",
     title: "Welcome to ProofForge",
     description:
-      "Stress-test your strategic decisions before they hit reality. ProofForge cross-examines your assumptions, exposes hidden bottlenecks, and quantifies your risk exposure.",
+      "Your truth and strategy engine. Scrutinize statements to expose misinformation, debate your assumptions in real time, and quantify risk so you can execute your future with absolute clarity.",
   },
   {
     id: "sidebar-nav",
@@ -67,14 +67,16 @@ export const fullTourSteps: TourStep[] = [
     route: "/scrutinize",
     target: "scrutinize-input",
     title: "Text Scrutinizer",
+    auto: true,
     description:
-      'We\'ve dropped a real viral post into the input below. Click "Begin Audit" to watch ProofForge extract its premise and flag every unproven leap and absolute claim, then hit Next when you\'re ready.',
+      'We\'ve dropped a real viral post into the input below. Click "Begin Audit" to watch ProofForge extract its premise and flag every unproven leap and absolute claim — we\'ll continue once your results are in.',
   },
   {
     id: "debate-create",
     route: "/debate",
     target: "debate-create-room",
     title: "Start a debate",
+    auto: true,
     description: `We've opened a room for you — "${DEMO_ROOM_TITLE}", arguing whether it should be legalized. Click "Create" to enter it.`,
   },
   {
@@ -82,14 +84,16 @@ export const fullTourSteps: TourStep[] = [
     route: "/debate",
     target: "debate-argument-input",
     title: "Make your case",
+    auto: true,
     description:
-      'We\'ve loaded a deliberately one-sided argument. Click "Done" and watch the AI opponent cross-examine every weak point in it.',
+      'We\'ve loaded a deliberately one-sided argument. Click "Done" and watch the AI opponent cross-examine every weak point in it — we\'ll move on once it responds.',
   },
   {
     id: "risk-decision",
     route: "/risk",
     target: "risk-decision-input",
     title: "Risk Simulator",
+    auto: true,
     description: `We've filled in a real decision: "${DEMO_RISK_DECISION}". Click "[INITIALIZE DIAGNOSIS >]" to generate cross-examination questions for it.`,
   },
   {
@@ -97,8 +101,9 @@ export const fullTourSteps: TourStep[] = [
     route: "/risk",
     target: "risk-answers",
     title: "Answer honestly",
+    auto: true,
     description:
-      "We've suggested an answer for each question based on a plausible scenario. Edit anything that doesn't fit, then run the full stress-test to see the blast radius.",
+      "We've suggested an answer for each question based on a plausible scenario. Edit anything that doesn't fit, then run the full stress-test — we'll wrap up once it comes back.",
   },
   {
     id: "replay-tour",

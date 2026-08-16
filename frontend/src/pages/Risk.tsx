@@ -4,6 +4,7 @@ import backgroundImage from "../assets/Risk_Background.jpg";
 import { useAuth } from "@clerk/react";
 import axios from "axios";
 import { useTourPrefill } from "../tour/useTourPrefill";
+import { useTourReady } from "../tour/useTourReady";
 import { DEMO_RISK_ANSWERS, DEMO_RISK_DECISION, DEMO_RISK_FALLBACK_ANSWER } from "../tour/steps";
 
 
@@ -91,6 +92,9 @@ export function Risk() {
       setAnswers(prefilled);
     }
   );
+
+  useTourReady("risk-decision", Boolean(selectedRisk?.probing_questions?.length));
+  useTourReady("risk-answers", selectedRisk?.status === "COMPLETED");
 
   const reset = () => {
     setDecision("");
@@ -309,7 +313,7 @@ export function Risk() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-5 py-4">
-              {!selectedRisk ? (
+              {!selectedRisk?.probing_questions?.length ? (
                 <div className="flex items-center gap-2 py-8 text-xs text-zinc-500">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-rose-400" />
                   Analyzing your decision...

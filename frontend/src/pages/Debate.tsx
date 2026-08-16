@@ -4,6 +4,7 @@ import backgroundImage from "../assets/Debate_Background.jpg";
 import { useAuth } from "@clerk/react";
 import axios from "axios";
 import { useTourPrefill } from "../tour/useTourPrefill";
+import { useTourReady } from "../tour/useTourReady";
 import { DEMO_ARGUMENT, DEMO_ROOM_TITLE, DEMO_ROOM_TOPIC } from "../tour/steps";
 
 interface SpeechRecognitionResultLike {
@@ -84,6 +85,9 @@ export function Debate() {
   useTourPrefill("debate-argument", Boolean(roomId) && !argument, () => {
     setArgument(DEMO_ARGUMENT);
   });
+
+  useTourReady("debate-create", Boolean(roomId));
+  useTourReady("debate-argument", aiTranscript.length > 0);
 
   useEffect(() => {
     if (!hasStarted || isDone) return;
