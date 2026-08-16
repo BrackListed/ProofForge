@@ -242,12 +242,11 @@ app.post("/analyze-risk/:userId", async(req, res) => {
   res.json(result.rows[0].id)
 })
 
-app.post("/analyze-risk/answers/:userId", async(req, res) => {
-  const {userId} = req.params
+app.post("/analyze-risk/answers/:id", async(req, res) => {
+  const {id} = req.params
   const {answers, initialDecision, category} = req.body
-  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
   const completions = await client.chat.completions.create({
-    model: `mistralai/Mistral-Nemo-Instruct-240`,
+    model: `mistralai/Mistral-Small-3.2-24B-Instruct-2506`,
     response_format: {type: "json_object"},
     messages: [{
       role: "system",
@@ -272,8 +271,8 @@ app.post("/analyze-risk/answers/:userId", async(req, res) => {
   })
   const response = completions.choices[0]?.message?.content ?? "{}"
   const parsedResponse = JSON.parse(response)
-  // const result = await pool.query("INSERT INTO risks(user_answers, risk_score, threat_level, reversibility_level, primary_obstacle, timeline, blast_radius, exit) VALUES($1, $2, $3, $4, $5, $6, $7, $8) WHERE user_id = $9", [JSON.stringify(answers)])
-  res.json(parsedResponse)
+  const result = await pool.query("UPDATE risks SET user_answers = $1, risk_score = $2, threat_level = $3, reversibility_level = $4, primary_obstacle = $5, timeline = $6, blast_radius = $7, exit = $8, status = $9, updated_at = NOW() WHERE id = $10 RETURNING *", [JSON.stringify(answers), parsedResponse.risk_score, parsedResponse.threat_level, parsedResponse.reversibility_level, parsedResponse.primary_obstacle, JSON.stringify(parsedResponse.timeline), JSON.stringify(parsedResponse.blast_radius), JSON.stringify(parsedResponse.exit), "COMPLETED", id])
+  res.json({id: result.rows[0].id})
 })
 
 const PORT = process.env.PORT || 5000

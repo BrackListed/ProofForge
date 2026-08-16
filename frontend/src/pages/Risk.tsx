@@ -36,12 +36,24 @@ interface exitType{
     fallback_plan: string
 }
 
+const threatColor: Record<string, string> = {
+  LOW: "text-emerald-400",
+  MODERATE: "text-amber-400",
+  CRITICAL: "text-rose-400",
+};
+
+const impactColor: Record<string, string> = {
+  LOW: "text-emerald-400",
+  MEDIUM: "text-amber-400",
+  HIGH: "text-rose-400",
+};
+
 interface riskType{
     id: string
     user_id: string
     status: "PROBING" | "COMPLETED" | "FAILED"
     initial_decision: string
-    category: string
+    category: string | null
     probing_questions: probingType[]
     user_answers: answerType[]
     risk_score: number
@@ -138,7 +150,7 @@ export function Risk() {
                   : "border-slate-700/50 text-zinc-400 hover:border-rose-500/40 hover:text-rose-400"
               }`}
             >
-              {risk.category.replace(/_/g, " ").toUpperCase()}
+              {risk.category ? risk.category.replace(/_/g, " ").toUpperCase() : "UNCATEGORIZED"}
             </button>
           ))}
         </div>
@@ -164,24 +176,35 @@ export function Risk() {
           </div>
         )}
 
-        {stage === "dashboard" && (
+        {stage === "dashboard" && (!selectedRisk || selectedRisk.status !== "COMPLETED") && (
+          <div className="flex items-center gap-2 border border-slate-700/50 bg-slate-950/80 p-8 text-xs text-zinc-500 backdrop-blur-sm">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-rose-400" />
+            Running full stress test...
+          </div>
+        )}
+
+        {stage === "dashboard" && selectedRisk && selectedRisk.status === "COMPLETED" && (
           <>
             <section className="grid grid-cols-3 gap-4">
               <div className="border border-rose-800/40 bg-slate-950/80 p-4 backdrop-blur-sm">
                 <p className="mb-2 text-xs tracking-widest text-zinc-500">[THREAT LEVEL]</p>
-                <p className="text-3xl font-bold text-rose-400">88%</p>
-                <p className="mt-1 text-xs tracking-widest text-rose-500">CRITICAL</p>
+                <p className={`text-3xl font-bold ${threatColor[selectedRisk.threat_level] ?? "text-rose-400"}`}>
+                  {selectedRisk.risk_score}%
+                </p>
+                <p className={`mt-1 text-xs tracking-widest ${threatColor[selectedRisk.threat_level] ?? "text-rose-500"}`}>
+                  {selectedRisk.threat_level}
+                </p>
               </div>
               <div className="border border-slate-700/50 bg-slate-950/80 p-4 backdrop-blur-sm">
                 <p className="mb-2 text-xs tracking-widest text-zinc-500">[REVERSIBILITY INDEX]</p>
                 <span className="inline-block border border-rose-500/40 bg-rose-500/10 px-3 py-1 text-sm tracking-widest text-rose-400">
-                  IRREVERSIBLE
+                  {selectedRisk.reversibility_level}
                 </span>
               </div>
               <div className="border border-slate-700/50 bg-slate-950/80 p-4 backdrop-blur-sm">
                 <p className="mb-2 text-xs tracking-widest text-zinc-500">[PRIMARY FAILURE VECTOR]</p>
                 <p className="text-sm leading-relaxed text-amber-400">
-                  Runway exhaustion before the pivot completes.
+                  {selectedRisk.primary_obstacle}
                 </p>
               </div>
             </section>
@@ -190,55 +213,39 @@ export function Risk() {
               <div className="col-span-3 border border-slate-700/50 bg-slate-950/80 p-5 backdrop-blur-sm">
                 <p className="mb-5 text-xs tracking-widest text-zinc-500">[CASCADING FAILURE TIMELINE]</p>
                 <div className="relative space-y-8 border-l-2 border-rose-500/30 pl-6">
-                  <div className="relative">
-                    <span className="absolute top-1 -left-7.25 h-3 w-3 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)]" />
-                    <p className="text-xs tracking-widest text-amber-400">[MONTH 1: INCEPTION FRICTION]</p>
-                    <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">
-                      Zero incoming revenue. Fixed costs continue unabated, drawn entirely from savings.
-                    </p>
-                  </div>
-                  <div className="relative">
-                    <span className="absolute top-1 -left-7.25 h-3 w-3 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)]" />
-                    <p className="text-xs tracking-widest text-amber-400">[MONTH 3: RUNWAY CRITICAL]</p>
-                    <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">
-                      Liquid buffer drops to 20% remaining. Decision fatigue and stress compound, degrading judgment.
-                    </p>
-                  </div>
-                  <div className="relative">
-                    <span className="absolute top-1 -left-7.25 h-3 w-3 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)]" />
-                    <p className="text-xs tracking-widest text-amber-400">[MONTH 6: PIVOT POINT]</p>
-                    <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">
-                      Forced to accept a low-tier fallback role just to sustain rent and dependent obligations.
-                    </p>
-                  </div>
-                  <div className="relative">
-                    <span className="absolute top-1 -left-7.25 h-3 w-3 rounded-full bg-rose-600 shadow-[0_0_14px_rgba(244,63,94,1)]" />
-                    <p className="text-xs tracking-widest text-rose-400">[MONTH 9: TERMINAL POINT]</p>
-                    <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">
-                      Original position is no longer recoverable. Recovery plan shifts from "return" to "rebuild."
-                    </p>
-                  </div>
+                  {selectedRisk.timeline.map((t, i) => {
+                    const isLast = i === selectedRisk.timeline.length - 1;
+                    return (
+                      <div key={t.step} className="relative">
+                        <span
+                          className={`absolute top-1 -left-7.25 h-3 w-3 rounded-full ${
+                            isLast
+                              ? "bg-rose-600 shadow-[0_0_14px_rgba(244,63,94,1)]"
+                              : "bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)]"
+                          }`}
+                        />
+                        <p className={`text-xs tracking-widest ${isLast ? "text-rose-400" : "text-amber-400"}`}>
+                          [{t.title.toUpperCase()}]
+                        </p>
+                        <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">{t.description}</p>
+                        <p className="mt-1 text-[10px] tracking-widest text-zinc-600">TARGET: {t.target_date}</p>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
               <div className="col-span-2 flex flex-col gap-6">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="border border-slate-700/50 bg-slate-950/80 p-3 backdrop-blur-sm">
-                    <p className="mb-1.5 text-[10px] tracking-widest text-zinc-500">[FINANCIAL DRAWDOWN]</p>
-                    <p className="text-xl font-semibold text-rose-400">-$18,400</p>
-                  </div>
-                  <div className="border border-slate-700/50 bg-slate-950/80 p-3 backdrop-blur-sm">
-                    <p className="mb-1.5 text-[10px] tracking-widest text-zinc-500">[TIME LOSS]</p>
-                    <p className="text-xl font-semibold text-amber-400">6mo</p>
-                  </div>
-                  <div className="border border-slate-700/50 bg-slate-950/80 p-3 backdrop-blur-sm">
-                    <p className="mb-1.5 text-[10px] tracking-widest text-zinc-500">[OPPORTUNITY COST]</p>
-                    <p className="text-xl font-semibold text-amber-400">7.2/10</p>
-                  </div>
-                  <div className="border border-slate-700/50 bg-slate-950/80 p-3 backdrop-blur-sm">
-                    <p className="mb-1.5 text-[10px] tracking-widest text-zinc-500">[STRESS LOAD]</p>
-                    <p className="text-xl font-semibold text-amber-400">8.4/10</p>
-                  </div>
+                  {selectedRisk.blast_radius.map((b, i) => (
+                    <div key={i} className="border border-slate-700/50 bg-slate-950/80 p-3 backdrop-blur-sm">
+                      <p className="mb-1.5 text-[10px] tracking-widest text-zinc-500">{b.affected_area.toUpperCase()}</p>
+                      <p className={`text-sm font-semibold ${impactColor[b.impact_level] ?? "text-amber-400"}`}>
+                        {b.impact_level}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-zinc-500">{b.description}</p>
+                    </div>
+                  ))}
                 </div>
 
                 <div className="flex-1 border border-rose-800/40 bg-rose-950/20 p-4 backdrop-blur-sm">
@@ -250,17 +257,17 @@ export function Risk() {
                         d="M12 9v3.75m0 3h.008v.008H12v-.008ZM9.401 3.6 1.67 17.25a1.5 1.5 0 0 0 1.299 2.25h18.062a1.5 1.5 0 0 0 1.299-2.25L14.599 3.6a1.5 1.5 0 0 0-2.598 0Z"
                       />
                     </svg>
-                    <p className="text-xs tracking-widest text-rose-400">[CIRCUIT BREAKERS]</p>
+                    <p className="text-xs tracking-widest text-rose-400">[EXIT PLAN]</p>
                   </div>
                   <div className="space-y-3 text-xs leading-relaxed text-zinc-400">
-                    <p className="border-b border-rose-500/20 pb-3">
-                      <span className="text-rose-400">⚠</span> If savings drop below $5,000, halt immediately and liquidate non-essential assets.
-                    </p>
-                    <p className="border-b border-rose-500/20 pb-3">
-                      <span className="text-rose-400">⚠</span> If recovery time exceeds 6 months, execute fallback re-entry to prior industry.
+                    <p>
+                      <span className="text-rose-400">⚠ IF</span> {selectedRisk.exit.trigger}
                     </p>
                     <p>
-                      <span className="text-rose-400">⚠</span> If dependents' baseline needs are unmet for 2+ consecutive months, abort and reassess.
+                      <span className="text-rose-400">&rarr; THEN</span> {selectedRisk.exit.action}
+                    </p>
+                    <p className="border-t border-rose-500/20 pt-3 text-zinc-500">
+                      {selectedRisk.exit.fallback_plan}
                     </p>
                   </div>
                 </div>
@@ -321,7 +328,7 @@ export function Risk() {
                     answer: answers[q.id] ?? "",
                   })) ?? [];
                   setStage("dashboard");
-                  stressTest(payload, selectedRisk?.initial_decision, selectedRisk?.category);
+                  stressTest(payload, selectedRisk?.initial_decision, selectedRisk?.category, selectedRisk!.id);
                 }}
                 className="border border-rose-500 bg-rose-600 px-4 py-2 text-xs tracking-widest text-white shadow-[0_0_20px_rgba(244,63,94,0.5)] transition-colors hover:bg-rose-500"
               >
@@ -343,9 +350,11 @@ export function Risk() {
     await fetchRisks(userId)
     setSelectedRisk(result.data)
   }
-  async function stressTest(answers: answerType[] | undefined, initialDecision: string | undefined, category: string | undefined){
+  async function stressTest(answers: answerType[] | undefined, initialDecision: string | undefined, category: string | null | undefined, id: string){
     const token = await getToken()
-    const result = await axios.post(`http://localhost:5000/analyze-risk/answers/${userId}`, {answers: answers, initialDecision: initialDecision, category: category}, {headers: {Authorization: `Bearer ${token}`}})
-    console.log(result.data)
+    const result = await axios.post(`http://localhost:5000/analyze-risk/answers/${id}`, {answers: answers, initialDecision: initialDecision, category: category}, {headers: {Authorization: `Bearer ${token}`}})
+    const completedRisk: riskType = result.data
+    setSelectedRisk(completedRisk)
+    setRisks((prev) => prev.map((r) => (r.id === completedRisk.id ? completedRisk : r)))
   }
 }
