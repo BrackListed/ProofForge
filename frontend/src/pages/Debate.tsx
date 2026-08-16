@@ -32,6 +32,15 @@ interface roomType {
     topic: string
 }
 
+interface transcriptType{
+    text: string | { response: string }
+    sender: string
+}
+
+function transcriptText(entry: transcriptType): string {
+  return typeof entry.text === "string" ? entry.text : entry.text?.response ?? "";
+}
+
 const SpeechRecognitionCtor: (new () => SpeechRecognitionLike) | undefined =
   (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionLike }).SpeechRecognition ??
   (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognitionLike }).webkitSpeechRecognition;
@@ -56,7 +65,12 @@ export function Debate() {
   const {userId, getToken} = useAuth()
   const [rooms, setRooms] = useState<roomType[]>([])
   const [roomId, setRoomId] = useState('')
-
+  const [aiTranscript, setAiTranscript] = useState<transcriptType[]>([])
+  const [userTranscript, setUserTranscript] = useState<transcriptType[]>([])
+  const [timeLimit, setTimeLimit] = useState(180)
+  const [aiResponseText, setAiResponseText] = useState("")
+  const [isAiTyping, setIsAiTyping] = useState(false)
+  const revealIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const activeRoom = rooms.find((r) => r.id === roomId) ?? null;
 
   useEffect(() => {
@@ -64,6 +78,46 @@ export function Debate() {
     const interval = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(interval);
   }, [hasStarted, isDone]);
+
+  // auto-submit the current argument once the user's clock runs out
+  useEffect(() => {
+    if (!hasStarted || isDone) return;
+    if (timeLimit - seconds > 0) return;
+    const timeout = setTimeout(() => {
+      if (isSpeaking) recognitionRef.current?.stop();
+      setIsSpeaking(false);
+      setIsDone(true);
+      processArgument(argument, userId, roomId);
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [seconds, timeLimit, isDone, hasStarted]);
+
+  useEffect(() => {
+    return () => {
+      if (revealIntervalRef.current) clearInterval(revealIntervalRef.current);
+    };
+  }, []);
+
+  const typeOutResponse = (fullText: string, submittedArgument: string) => {
+    if (revealIntervalRef.current) clearInterval(revealIntervalRef.current);
+    setAiResponseText("");
+    setIsAiTyping(true);
+    let i = 0;
+    revealIntervalRef.current = setInterval(() => {
+      i++;
+      setAiResponseText(fullText.slice(0, i));
+      if (i >= fullText.length) {
+        if (revealIntervalRef.current) clearInterval(revealIntervalRef.current);
+        revealIntervalRef.current = null;
+        setIsAiTyping(false);
+        setUserTranscript((prev) => [...prev, { text: submittedArgument, sender: "user" }]);
+        setAiTranscript((prev) => [...prev, { text: fullText, sender: "ai" }]);
+        setArgument("");
+        setSeconds(0);
+        setIsDone(false);
+      }
+    }, 20);
+  };
 
   useEffect(() => {
     if (!userId) return;
@@ -74,6 +128,26 @@ export function Debate() {
     }
     fetchRoomData()
   }, [userId])
+  useEffect(() => {
+    if(!roomId) return 
+    const fetchDebateLogs = async() => {
+        const token = await getToken()
+        const result = await axios.get(`http://localhost:5000/debate/logs/${roomId}/${userId}`, {headers: {Authorization: `Bearer ${token}`}})
+        const log = result.data?.[0]
+        if(!log?.transcript){
+          setUserTranscript([])
+          setAiTranscript([])
+          return
+        }
+        const userTranscript = log.transcript.filter((item: transcriptType) => item.sender === "user")
+        const aiTranscript = log.transcript.filter((item: transcriptType) => item.sender === "ai")
+        setUserTranscript(userTranscript)
+        setAiTranscript(aiTranscript)
+        console.log(aiTranscript)
+        console.log(userTranscript)
+    }
+    if(roomId) fetchDebateLogs()
+  }, [roomId])
 
   const handleArgumentChange = (value: string) => {
     setArgument(value);
@@ -165,13 +239,29 @@ export function Debate() {
               <div className="border border-zinc-700 bg-zinc-950/70 p-4 backdrop-blur-sm">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-xs tracking-widest text-zinc-500">[YOUR ARGUMENT]</p>
-                  <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+                  <div className="flex items-center gap-2 text-xs text-zinc-500">
                     <span
                       className={`h-1.5 w-1.5 rounded-full ${
                         hasStarted && !isDone ? "bg-red-400 animate-pulse" : "bg-zinc-600"
                       }`}
                     />
-                    {formatTime(seconds)}
+                    {formatTime(Math.max(timeLimit - seconds, 0))}
+                    <button
+                      type="button"
+                      disabled={isDone}
+                      onClick={() => setTimeLimit((t) => t + 60)}
+                      className="border border-zinc-700 px-1.5 py-0.5 text-[10px] tracking-wide text-zinc-400 transition-colors hover:border-red-500/50 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      +1m
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isDone}
+                      onClick={() => setTimeLimit((t) => t + 300)}
+                      className="border border-zinc-700 px-1.5 py-0.5 text-[10px] tracking-wide text-zinc-400 transition-colors hover:border-red-500/50 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      +5m
+                    </button>
                   </div>
                 </div>
 
@@ -216,11 +306,12 @@ export function Debate() {
                     <circle cx="14.5" cy="13" r="1" fill="currentColor" stroke="none" />
                   </svg>
                   <p className="text-xs tracking-widest text-zinc-500">[AI RESPONSE]</p>
+                  {isAiTyping && <span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-pulse" />}
                 </div>
 
                 <textarea
                   readOnly
-                  value=""
+                  value={aiResponseText}
                   placeholder="AI response will appear here..."
                   className="h-64 w-full resize-none border border-zinc-800 bg-black/60 p-3 text-sm text-zinc-300 outline-none"
                 />
@@ -242,6 +333,36 @@ export function Debate() {
                 {isDone ? "✓ Done" : "> Done <"}
               </button>
             </div>
+
+            {(userTranscript.length > 0 || aiTranscript.length > 0) && (
+              <div className="mt-6 grid grid-cols-2 gap-6">
+                <div className="border border-zinc-700 bg-zinc-950/70 p-4 backdrop-blur-sm">
+                  <p className="mb-3 text-xs tracking-widest text-zinc-500">
+                    [YOUR TRANSCRIPT] ({userTranscript.length})
+                  </p>
+                  <div className="max-h-48 space-y-2 overflow-y-auto text-xs leading-relaxed text-zinc-400">
+                    {userTranscript.map((entry, i) => (
+                      <p key={i} className="border-b border-zinc-800 pb-2 last:border-b-0 last:pb-0">
+                        {transcriptText(entry)}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border border-zinc-700 bg-zinc-950/70 p-4 backdrop-blur-sm">
+                  <p className="mb-3 text-xs tracking-widest text-zinc-500">
+                    [AI TRANSCRIPT] ({aiTranscript.length})
+                  </p>
+                  <div className="max-h-48 space-y-2 overflow-y-auto text-xs leading-relaxed text-zinc-400">
+                    {aiTranscript.map((entry, i) => (
+                      <p key={i} className="border-b border-zinc-800 pb-2 last:border-b-0 last:pb-0">
+                        {transcriptText(entry)}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <>
@@ -279,6 +400,7 @@ export function Debate() {
                     setIsDone(false);
                     setHasStarted(false);
                     setSeconds(0);
+                    setTimeLimit(180);
                     setRoomId(room.id);
                   }}
                   className="group border border-zinc-700 bg-zinc-950/70 p-4 text-left backdrop-blur-sm transition-colors hover:border-red-500/50 hover:bg-zinc-900"
@@ -339,6 +461,7 @@ export function Debate() {
                   setIsDone(false);
                   setHasStarted(false);
                   setSeconds(0);
+                  setTimeLimit(180);
                   createRoom(roomName, topic, userId)
                 }}
                 className="border border-zinc-700 px-4 py-2 text-xs tracking-wide text-zinc-300 transition-colors hover:border-red-500/50 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
@@ -362,9 +485,15 @@ export function Debate() {
   }
 
   async function processArgument(argument: string, userId: string | undefined | null, roomId: string){
-    if(!userId) return 
-    const token = await getToken()
-    const result = await axios.post(`http://localhost:5000/process-argument/${userId}/${roomId}`, {argument: argument}, {headers: {Authorization: `Bearer ${token}`}})
-    console.log(result.data.response)
+    if(!userId) return
+    try {
+      const token = await getToken()
+      const result = await axios.post(`http://localhost:5000/process-argument/${userId}/${roomId}`, {argument: argument}, {headers: {Authorization: `Bearer ${token}`}})
+      const responseText: string = result.data?.response ?? ""
+      typeOutResponse(responseText, argument)
+    } catch (err) {
+      console.error(err)
+      typeOutResponse("⚠ Failed to get a response. Try again.", argument)
+    }
   }
 }

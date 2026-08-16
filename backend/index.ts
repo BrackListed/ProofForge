@@ -83,6 +83,13 @@ app.get("/rooms/:userId", async(req, res) => {
   res.json(result.rows)
 })
 
+app.get("/debate/logs/:roomId/:userId", async(req, res) => {
+  const {userId, roomId} = req.params
+  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
+  const result = await pool.query("SELECT transcript FROM debate_logs WHERE room_id = $1 AND user_id = $2", [roomId, id.rows[0].id])
+  res.json(result.rows)
+})
+
 app.post("/scrutinize/:userId", async(req, res) => {
   const {userId} = req.params
   const {text, file} = req.body
@@ -185,7 +192,7 @@ app.post("/process-argument/:userId/:roomId", async(req, res) => {
   })
   transcript.push({
     sender: "ai",
-    text: reply
+    text: parsedReply
   })
   await pool.query(`INSERT INTO debate_logs(user_id, room_id, transcript, updated_at) VALUES($1, $2, $3, NOW()) ON CONFLICT(user_id, room_id) DO UPDATE SET transcript = $3, updated_at = NOW()`, [id.rows[0].id, roomId, JSON.stringify(transcript)])
   return res.json(parsedReply)

@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, numeric, serial, integer, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, numeric, serial, integer, jsonb, unique } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
@@ -52,7 +52,9 @@ export const debate_logs = pgTable("debate_logs", {
     }>
     >().default([]).notNull(),
     updated_at: timestamp("updated_at").defaultNow().notNull()
-})
+}, (table) => [
+    unique("user_room_unique").on(table.user_id, table.room_id)
+])
 
 export const debateRoomRelations = relations(debate_room, ({ many }) => ({
     logs: many(debate_logs)
