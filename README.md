@@ -11,6 +11,7 @@ Built in 48 hours for **Impact Forge** — General Innovation track.
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" />
   <img alt="Vite" src="https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white" />
   <img alt="TailwindCSS" src="https://img.shields.io/badge/Tailwind_CSS_v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" />
+  <img alt="Node.js" src="https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white" />
   <img alt="Express" src="https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white" />
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" />
   <img alt="Groq" src="https://img.shields.io/badge/Groq_·_Llama_3.3_70B-F55036?style=flat-square&logo=groq&logoColor=white" />
@@ -36,24 +37,23 @@ Drop in any statement, article, or viral post. ProofForge extracts its core prem
 
 Turns "this sounds true" into "here's exactly why it isn't."
 
-![Text Scrutinizer screenshot](docs/screenshots/scrutinizer.png)
+![Text Scrutinizer screenshot](docs/screenshots/Scrutinizer.png)
 
 ### 🗣️ Debate Simulator
 State your position — type it or speak it — and get cross-examined in real time by an AI opponent that doesn't let evasions or weak points slide. It's a sparring partner for your own arguments, so the first time they get pressure-tested isn't in front of someone who matters.
 
-![Debate Simulator screenshot](docs/screenshots/debate.png)
+![Debate Simulator screenshot](docs/screenshots/Debate.png)
 
 ### ⚠️ Risk Simulator
 Feed it a real decision. It cross-examines you with the questions you'd need to answer honestly before committing, then turns your answers into a full risk profile: a computed risk score and threat level, a cascading-failure timeline showing how it could unravel over time, a blast-radius map of everything it touches, and an exit plan with a concrete trigger and fallback — so you're never caught without a plan B.
 
-![Risk Simulator screenshot](docs/screenshots/risk.png)
+![Risk Simulator screenshot](docs/screenshots/Risk.png)
 
 ### 📊 Dashboard
 Everything scrutinized, debated, and assessed lands here — live counts, a recent-activity feed, and one click into any tool. New here? An interactive, step-by-step guided tour walks you through all three tools end-to-end with a real live example in each, auto-advancing only once each result actually comes back.
 
-![Dashboard screenshot](docs/screenshots/dashboard.png)
+![Dashboard screenshot](docs/screenshots/Dashboard.png)
 
-> 📸 Screenshots above are placeholders — drop the real PNGs into `docs/screenshots/` (`dashboard.png`, `scrutinizer.png`, `debate.png`, `risk.png`) and they'll render automatically.
 
 ## 🛠️ How it's built
 
@@ -61,7 +61,8 @@ Everything scrutinized, debated, and assessed lands here — live counts, a rece
 |---|---|
 | **Frontend** | React 19 + TypeScript, Vite, Tailwind CSS v4, Framer Motion, React Router |
 | **Auth** | Clerk (session-based auth + webhooks) |
-| **Backend** | Node.js + Express |
+| **Runtime** | Node.js |
+| **Backend** | Express |
 | **Database** | PostgreSQL + Drizzle ORM |
 | **AI Inference** | Groq — `llama-3.3-70b-versatile` |
 
