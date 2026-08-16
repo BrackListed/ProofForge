@@ -6,6 +6,7 @@ import axios from "axios";
 import { useTourPrefill } from "../tour/useTourPrefill";
 import { useTourReady } from "../tour/useTourReady";
 import { DEMO_SCRUTINIZE_TEXT } from "../tour/steps";
+import { API_BASE_URL } from "../lib/api";
 
 
 interface ScrutinizeType {
@@ -58,7 +59,7 @@ export function Scrutinizer() {
   useEffect(() => {
     if (!userId) return;
     const fetchScrutinizeLogs = async() => {
-      const result = await axios.get<ScrutinizeType[]>(`http://localhost:5000/logs/scrutinize/${userId}`)
+      const result = await axios.get<ScrutinizeType[]>(`${API_BASE_URL}/logs/scrutinize/${userId}`)
       setScrutinizeLogs(result.data)
     }
     fetchScrutinizeLogs()
@@ -339,13 +340,13 @@ export function Scrutinizer() {
     if(!userId) return
     const token = await getToken()
     if(text){
-      const result = await axios.post<ScrutinizeType>(`http://localhost:5000/scrutinize/${userId}`, {text: text}, {headers: {Authorization: `Bearer ${token}`}})
+      const result = await axios.post<ScrutinizeType>(`${API_BASE_URL}/scrutinize/${userId}`, {text: text}, {headers: {Authorization: `Bearer ${token}`}})
       setScrutinizeLogs((prev) => [result.data, ...prev])
       setSelectedLog(result.data)
     } else{
       const formData = new FormData()
       if(file) formData.append('file', file)
-      const result = await axios.post<ScrutinizeType>(`http://localhost:5000/scrutinize/${userId}`, formData, {headers: {Authorization: `Bearer ${token}`}})
+      const result = await axios.post<ScrutinizeType>(`${API_BASE_URL}/scrutinize/${userId}`, formData, {headers: {Authorization: `Bearer ${token}`}})
       setScrutinizeLogs((prev) => [result.data, ...prev])
       setSelectedLog(result.data)
     }

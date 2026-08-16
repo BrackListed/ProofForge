@@ -4,6 +4,7 @@ import { useSignIn } from "@clerk/react/legacy";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import backgroundImage from "../assets/Intermission_Background.jpg";
+import { API_BASE_URL } from "../lib/api";
 
 export function Intermission() {
   const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
@@ -20,7 +21,7 @@ export function Intermission() {
       // The backend mints a one-time Clerk sign-in token for the fixed guest
       // account — this completes immediately with no password or second
       // factor, sidestepping Clerk's device-trust challenge entirely.
-      const { data } = await axios.post<{ token: string }>("http://localhost:5000/guest-token");
+      const { data } = await axios.post<{ token: string }>(`${API_BASE_URL}/guest-token`);
       const result = await signIn.create({ strategy: "ticket", ticket: data.token });
       if (result.status === "complete" && result.createdSessionId) {
         await setActive({ session: result.createdSessionId });

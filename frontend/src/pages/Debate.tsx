@@ -6,6 +6,7 @@ import axios from "axios";
 import { useTourPrefill } from "../tour/useTourPrefill";
 import { useTourReady } from "../tour/useTourReady";
 import { DEMO_ARGUMENT, DEMO_ROOM_TITLE, DEMO_ROOM_TOPIC } from "../tour/steps";
+import { API_BASE_URL } from "../lib/api";
 
 interface SpeechRecognitionResultLike {
   isFinal: boolean;
@@ -139,7 +140,7 @@ export function Debate() {
     if (!userId) return;
     const fetchRoomData = async() => {
         const token = await getToken()
-        const result = await axios.get(`http://localhost:5000/rooms/${userId}`, {headers: {Authorization: `Bearer ${token}`}})
+        const result = await axios.get(`${API_BASE_URL}/rooms/${userId}`, {headers: {Authorization: `Bearer ${token}`}})
         setRooms(result.data)
     }
     fetchRoomData()
@@ -148,7 +149,7 @@ export function Debate() {
     if(!roomId) return 
     const fetchDebateLogs = async() => {
         const token = await getToken()
-        const result = await axios.get(`http://localhost:5000/debate/logs/${roomId}/${userId}`, {headers: {Authorization: `Bearer ${token}`}})
+        const result = await axios.get(`${API_BASE_URL}/debate/logs/${roomId}/${userId}`, {headers: {Authorization: `Bearer ${token}`}})
         const log = result.data?.[0]
         if(!log?.transcript){
           setUserTranscript([])
@@ -503,7 +504,7 @@ export function Debate() {
   async function createRoom(title: string, topic: string, userId: string | undefined | null){
     if(!userId) return
     const token = await getToken()
-    const result = await axios.post(`http://localhost:5000/create-room/${userId}`, {title: title, topic: topic}, {headers: {Authorization: `Bearer ${token}`}})
+    const result = await axios.post(`${API_BASE_URL}/create-room/${userId}`, {title: title, topic: topic}, {headers: {Authorization: `Bearer ${token}`}})
     const newRoom: roomType = { id: result.data, user_id: userId ?? "", title, topic }
     setRooms((prev) => [...prev, newRoom])
     setRoomId(newRoom.id)
@@ -512,7 +513,7 @@ export function Debate() {
   async function deleteRoom(roomId: string, userId: string | undefined | null){
     if(!userId) return
     const token = await getToken()
-    await axios.delete(`http://localhost:5000/rooms/${userId}/${roomId}`, {headers: {Authorization: `Bearer ${token}`}})
+    await axios.delete(`${API_BASE_URL}/rooms/${userId}/${roomId}`, {headers: {Authorization: `Bearer ${token}`}})
     setRooms((prev) => prev.filter((r) => r.id !== roomId))
   }
 
@@ -520,7 +521,7 @@ export function Debate() {
     if(!userId) return
     try {
       const token = await getToken()
-      const result = await axios.post(`http://localhost:5000/process-argument/${userId}/${roomId}`, {argument: argument}, {headers: {Authorization: `Bearer ${token}`}})
+      const result = await axios.post(`${API_BASE_URL}/process-argument/${userId}/${roomId}`, {argument: argument}, {headers: {Authorization: `Bearer ${token}`}})
       const responseText: string = result.data?.response ?? ""
       typeOutResponse(responseText, argument)
     } catch (err) {

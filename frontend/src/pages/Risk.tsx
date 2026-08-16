@@ -6,6 +6,7 @@ import axios from "axios";
 import { useTourPrefill } from "../tour/useTourPrefill";
 import { useTourReady } from "../tour/useTourReady";
 import { DEMO_RISK_ANSWERS, DEMO_RISK_DECISION, DEMO_RISK_FALLBACK_ANSWER } from "../tour/steps";
+import { API_BASE_URL } from "../lib/api";
 
 
 interface probingType{
@@ -112,7 +113,7 @@ export function Risk() {
   const fetchRisks = async (userId: string | null | undefined) => {
     if (!userId) return;
     const token = await getToken()
-    const result = await axios.get(`http://localhost:5000/risks/${userId}`, {headers: {Authorization: `Bearer ${token}`}})
+    const result = await axios.get(`${API_BASE_URL}/risks/${userId}`, {headers: {Authorization: `Bearer ${token}`}})
     setRisks(Array.isArray(result.data) ? result.data : [])
   }
 
@@ -369,13 +370,13 @@ export function Risk() {
     setSelectedRisk(undefined)
     setAnswers({})
     const token = await getToken()
-    const result = await axios.post(`http://localhost:5000/analyze-risk/${userId}`, {decision: decision}, {headers: {Authorization: `Bearer ${token}`}})
+    const result = await axios.post(`${API_BASE_URL}/analyze-risk/${userId}`, {decision: decision}, {headers: {Authorization: `Bearer ${token}`}})
     await fetchRisks(userId)
     setSelectedRisk(result.data)
   }
   async function stressTest(answers: answerType[] | undefined, initialDecision: string | undefined, category: string | null | undefined, id: string){
     const token = await getToken()
-    const result = await axios.post(`http://localhost:5000/analyze-risk/answers/${id}`, {answers: answers, initialDecision: initialDecision, category: category}, {headers: {Authorization: `Bearer ${token}`}})
+    const result = await axios.post(`${API_BASE_URL}/analyze-risk/answers/${id}`, {answers: answers, initialDecision: initialDecision, category: category}, {headers: {Authorization: `Bearer ${token}`}})
     const completedRisk: riskType = result.data
     setSelectedRisk(completedRisk)
     setRisks((prev) => prev.map((r) => (r.id === completedRisk.id ? completedRisk : r)))

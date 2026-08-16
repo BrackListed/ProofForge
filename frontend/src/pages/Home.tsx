@@ -7,6 +7,7 @@ import axios from "axios";
 import { motion } from "framer-motion";
 import { useTour, TOUR_STORAGE_KEY } from "../tour/useTour";
 import { fullTourSteps } from "../tour/steps";
+import { API_BASE_URL } from "../lib/api";
 
 interface statsType {
   scrutinized: number
@@ -65,7 +66,7 @@ export function Home() {
     const fetchStats = async () => {
       if (!userId) return;
       const token = await getToken()
-      const result = await axios.get<statsType>(`http://localhost:5000/stats/${userId}`, {headers: {Authorization: `Bearer ${token}`}})
+      const result = await axios.get<statsType>(`${API_BASE_URL}/stats/${userId}`, {headers: {Authorization: `Bearer ${token}`}})
       setStats(result.data)
       setIsLoading(false)
     };
@@ -75,7 +76,7 @@ export function Home() {
     const fetchActivity = async () => {
       if (!userId) return;
       const token = await getToken()
-      const result = await axios.get<activityType[]>(`http://localhost:5000/activity/${userId}`, {headers: {Authorization: `Bearer ${token}`}})
+      const result = await axios.get<activityType[]>(`${API_BASE_URL}/activity/${userId}`, {headers: {Authorization: `Bearer ${token}`}})
       setActivity(result.data)
     };
     fetchActivity();
