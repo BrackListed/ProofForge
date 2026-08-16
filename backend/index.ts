@@ -156,11 +156,13 @@ app.post("/process-argument/:userId/:roomId", async(req, res) => {
     transcript = result.rows[0].transcript;
   }
   const completions = await client.chat.completions.create({
-    model: "meta-llama/Meta-Llama-3.1-8B-Instruct",
+    model: "Qwen/Qwen2.5-7B-Instruct",
     response_format: {type: "json_object"},
     messages: [{
       role: "system",
-      content: `You are an expert debate opponent. Review the conversation history. Call out evasions or weak points from previous turns if unaddressed, then cross-examine the latest argument. You MUST respond strictly in JSON using this exact format: 
+      content: `ou are an expert debate opponent. Review the conversation history. Call out evasions or weak points from previous turns if unaddressed, then cross-examine the latest argument.
+      STRICT LENGTH CONSTRAINT: Your response must be concise and targeted, between 300 to 450 words max (roughly a 3-minute read). Do NOT write long essays or rambling introductory fluff. Get straight to the point with sharp rebuttal points. 
+      You MUST respond strictly in JSON using this exact format:
       { 
         "response": your full rebuttal and cross-examination here
       }` 
@@ -185,8 +187,7 @@ app.post("/process-argument/:userId/:roomId", async(req, res) => {
     sender: "ai",
     text: reply
   })
-
-  await pool.query("UPDATE debate_logs SET transcript = $1, updated_at = NOW() WHERE room_id = $2 AND user_id = $3", [JSON.stringify(transcript), roomId, id.rows[0].id])
+  await pool.query(`INSERT INTO debate_logs(user_id, room_id, transcript, updated_at) VALUES($1, $2, $3, NOW()) ON CONFLICT(user_id, room_id) DO UPDATE SET transcript = $3, updated_at = NOW()`, [id.rows[0].id, roomId, JSON.stringify(transcript)])
   return res.json(parsedReply)
 })
 
