@@ -13,6 +13,7 @@ interface probingType{
 
 interface answerType{
     id: string
+    question: string
     answer: string
 }
 
@@ -313,7 +314,15 @@ export function Risk() {
               </button>
               <button
                 type="button"
-                onClick={() => setStage("dashboard")}
+                onClick={() => {
+                  const payload: answerType[] = selectedRisk?.probing_questions.map((q) => ({
+                    id: q.id,
+                    question: q.question,
+                    answer: answers[q.id] ?? "",
+                  })) ?? [];
+                  setStage("dashboard");
+                  stressTest(payload, selectedRisk?.initial_decision, selectedRisk?.category);
+                }}
                 className="border border-rose-500 bg-rose-600 px-4 py-2 text-xs tracking-widest text-white shadow-[0_0_20px_rgba(244,63,94,0.5)] transition-colors hover:bg-rose-500"
               >
                 [RUN FULL STRESS-TEST]
@@ -333,6 +342,10 @@ export function Risk() {
     const result = await axios.post(`http://localhost:5000/analyze-risk/${userId}`, {decision: decision}, {headers: {Authorization: `Bearer ${token}`}})
     await fetchRisks(userId)
     setSelectedRisk(result.data)
+  }
+  async function stressTest(answers: answerType[] | undefined, initialDecision: string | undefined, category: string | undefined){
+    const token = await getToken()
+    const result = await axios.post(`http://localhost:5000/analyze-risk/answers/${userId}`, {answers: answers, initialDecision: initialDecision, category: category}, {headers: {Authorization: `Bearer ${token}`}})
     console.log(result.data)
   }
 }

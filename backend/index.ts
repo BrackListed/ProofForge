@@ -217,7 +217,6 @@ app.post("/analyze-risk/:userId", async(req, res) => {
   const {userId} = req.params
   const {decision} = req.body
   const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
-  console.log(decision)
   const completions = await client.chat.completions.create({
     model: `mistralai/Mistral-Small-24B-Instruct-2501`,
     response_format: {type: "json_object"},
@@ -241,6 +240,40 @@ app.post("/analyze-risk/:userId", async(req, res) => {
   const parsedResponse = JSON.parse(response)
   const result = await pool.query("INSERT INTO risks(user_id, status, initial_decision, category, probing_questions) VALUES($1, $2, $3, $4, $5) RETURNING id", [id.rows[0].id, "PROBING", decision, parsedResponse.category, JSON.stringify(parsedResponse.probing_questions)])
   res.json(result.rows[0].id)
+})
+
+app.post("/analyze-risk/answers/:userId", async(req, res) => {
+  const {userId} = req.params
+  const {answers, initialDecision, category} = req.body
+  const id = await pool.query("SELECT id FROM users WHERE clerk_user_id = $1", [userId])
+  const completions = await client.chat.completions.create({
+    model: `mistralai/Mistral-Nemo-Instruct-240`,
+    response_format: {type: "json_object"},
+    messages: [{
+      role: "system",
+      content: `You are an aggressive architectural and strategic risk diagnostic engine. Analyze the provided user cross-examination answers against their initial decision.
+        Compute and return a raw JSON object containing ALL seven of the following fields:
+        1. "risk_score": Integer (0 to 100).
+        2. "threat_level": Strictly one of ["LOW", "MODERATE", "CRITICAL"].
+        3. "reversibility_level": Strictly one of ["HIGH", "MEDIUM", "IRREVERSIBLE"].
+        4. "primary_obstacle": Single high-impact string identifying the core bottleneck.
+        5. "blast_radius": Array of objects [{ "affected_area": string, "impact_level": "LOW" | "MEDIUM" | "HIGH", "description": string }].
+        6. "timeline": Array of chronological objects [{ "step": number, "title": string, "description": string, "target_date": string }].
+        7. "exit": Single object { "trigger": string, "action": string, "fallback_plan": string }.
+        OUTPUT RULES:
+        - Output MUST be strictly valid JSON matching the specified keys.
+        - Do NOT include markdown code blocks (no \`\`\`json), explanations, or preamble.`
+    },
+    {
+      role: 'user',
+      content: `Initial Decision: ${initialDecision} \n Category: ${category} \n User Answers: ${JSON.stringify(answers, null, 2)}`
+    }
+    ]
+  })
+  const response = completions.choices[0]?.message?.content ?? "{}"
+  const parsedResponse = JSON.parse(response)
+  // const result = await pool.query("INSERT INTO risks(user_answers, risk_score, threat_level, reversibility_level, primary_obstacle, timeline, blast_radius, exit) VALUES($1, $2, $3, $4, $5, $6, $7, $8) WHERE user_id = $9", [JSON.stringify(answers)])
+  res.json(parsedResponse)
 })
 
 const PORT = process.env.PORT || 5000
