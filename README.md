@@ -14,7 +14,7 @@ Built in 48 hours for **Impact Forge** — General Innovation track.
   <img alt="Node.js" src="https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white" />
   <img alt="Express" src="https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white" />
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" />
-  <img alt="Groq" src="https://img.shields.io/badge/Groq_·_Llama_3.3_70B-F55036?style=flat-square&logo=groq&logoColor=white" />
+  <img alt="Groq" src="https://img.shields.io/badge/Groq_·_GPT_OSS_20B-F55036?style=flat-square&logo=groq&logoColor=white" />
   <img alt="Clerk" src="https://img.shields.io/badge/Clerk_Auth-6C47FF?style=flat-square&logo=clerk&logoColor=white" />
 </p>
 
@@ -64,14 +64,14 @@ Everything scrutinized, debated, and assessed lands here — live counts, a rece
 | **Runtime** | Node.js |
 | **Backend** | Express |
 | **Database** | PostgreSQL + Drizzle ORM |
-| **AI Inference** | Groq — `llama-3.3-70b-versatile` |
+| **AI Inference** | Groq — `openai/gpt-oss-20b` |
 
 ### Architecture
 
 ```
 ┌──────────────────┐        ┌──────────────────┐        ┌──────────────────┐
 │   React Frontend  │  ───▶  │  Express Backend  │  ───▶  │   Groq Inference  │
-│  (Vite + Clerk)   │  ◀───  │   (REST + Auth)   │  ◀───  │  Llama 3.3 70B    │
+│  (Vite + Clerk)   │  ◀───  │   (REST + Auth)   │  ◀───  │  GPT OSS 20B      │
 └──────────────────┘        └────────┬─────────┘        └──────────────────┘
                                       │
                                       ▼
@@ -142,7 +142,7 @@ Visit `http://localhost:5173`, sign up, and start forging.
 
 **The problem:** most "AI writing/decision tools" give you agreeable, hedge-everything output. Nothing pushes back. ProofForge is the opposite by design — every tool exists to actively find the hole in your thinking before someone else does.
 
-**The stack:** a full-stack TypeScript app — React 19 on the frontend, Express + PostgreSQL on the backend, Clerk handling auth end-to-end, and Groq's `llama-3.3-70b-versatile` doing the actual reasoning work across all three tools (structured JSON output for premise/logic extraction, live debate cross-examination, and multi-stage risk diagnostics).
+**The stack:** a full-stack TypeScript app — React 19 on the frontend, Express + PostgreSQL on the backend, Clerk handling auth end-to-end, and Groq's `openai/gpt-oss-20b` doing the actual reasoning work across all three tools (structured JSON output for premise/logic extraction, live debate cross-examination, and multi-stage risk diagnostics).
 
 **What was hard:** getting three genuinely different AI-driven UX patterns — a one-shot structured audit, a real-time conversational debate with speech input, and a multi-step diagnostic interview — to feel like one coherent product instead of three bolted-together demos. The guided product tour in particular had to react to *real* async state (actual API responses landing, not fake timers) without ever letting the UI get stuck mid-flow.
 

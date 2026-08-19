@@ -12,7 +12,7 @@ const app = express()
 const pool = new Pool({connectionString: process.env.DATABASE_URL})
 const db = drizzle(process.env.DATABASE_URL!)
 
-const GROQ_MODEL = "llama-3.3-70b-versatile"
+const GROQ_MODEL = "openai/gpt-oss-20b"
 const GUEST_CLERK_USER_ID = "user_3I0S3d8ipBqUlXGP7TilYrLagbv"
 
 async function getOrCreateUserId(userId: string){
