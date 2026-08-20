@@ -4,8 +4,6 @@
 
 **ProofForge is an adversarial reasoning engine** — a truth-and-strategy toolkit built to stress-test your thinking *before reality does it for you*. Most tools give you passive advice. ProofForge fights back: it tears apart weak arguments claim by claim, interrupts you mid-debate with a live AI opponent that won't let a bad point slide, and simulates the full blast radius of your riskiest decisions before you make them.
 
-Built in 48 hours for **Impact Forge** — General Innovation track.
-
 <p align="left">
   <img alt="React" src="https://img.shields.io/badge/React_19-149ECA?style=flat-square&logo=react&logoColor=white" />
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" />
@@ -146,6 +144,3 @@ Visit `http://localhost:5173`, sign up, and start forging.
 
 **What was hard:** getting three genuinely different AI-driven UX patterns — a one-shot structured audit, a real-time conversational debate with speech input, and a multi-step diagnostic interview — to feel like one coherent product instead of three bolted-together demos. The guided product tour in particular had to react to *real* async state (actual API responses landing, not fake timers) without ever letting the UI get stuck mid-flow.
 
-## 🏆 Built for Impact Forge
-
-General Innovation track. 48 hours, one repo, no excuses.
